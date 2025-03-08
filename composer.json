@@ -1,6 +1,6 @@
 {
     "name": "derafu/mail",
-    "description": "Derafu: Mail - PHP Mailing Library",
+    "description": "Derafu: Mail - Elegant orchestration of email communications for PHP",
     "type": "library",
     "homepage": "https://derafu.org/mail",
     "license": "MIT",
@@ -25,20 +25,23 @@
         }
     },
     "require": {
-        "php": "^8.3"
+        "php": "^8.3",
+        "derafu/backbone": "dev-main"
     },
     "require-dev": {
         "ext-xdebug": "*",
         "friendsofphp/php-cs-fixer": "^3.63",
         "phpstan/phpstan": "^1.12",
         "phpunit/phpunit": "^11.4",
-        "derafu/foundation": "dev-main"
+        "derafu/foundation": "dev-main",
+        "symfony/mailer": "^7.2",
+        "php-imap/php-imap": "^5.0"
     },
     "scripts": {
         "docs": "php tools/phpdocumentor run --config=phpdoc.xml",
         "tests": "XDEBUG_MODE=coverage vendor/bin/phpunit --configuration=phpunit.xml",
         "phpcs-fix": "vendor/bin/php-cs-fixer fix -v --config=php-cs-fixer.php",
-        "phpcs-fix-dry-run": "vendor/bin/php-cs-fixer fix -v --dry-run --diff --config=php-cs-fixer.php",
+        "phpcs": "vendor/bin/php-cs-fixer fix -v --dry-run --diff --config=php-cs-fixer.php",
         "phpstan": "vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
         "phpstan-export": "vendor/bin/phpstan analyse --configuration=phpstan.neon --level 9 --generate-baseline",
         "build": "npm run build",

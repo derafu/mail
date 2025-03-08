@@ -2,6 +2,8 @@
 var/
 vendor/
 composer.lock
+tests/env-tests
+assets/img/**.svg
 
 # Node.js and Vite build.
 node_modules/

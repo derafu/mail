@@ -1,7 +1,7 @@
 {
   "name": "derafu-mail",
   "version": "1.0.0",
-  "description": "Derafu: Mail - PHP Mailing Library",
+  "description": "Derafu: Mail - Elegant orchestration of email communications for PHP",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -20,6 +20,7 @@
   "homepage": "https://github.com/derafu/mail#readme",
   "devDependencies": {
     "vite": "^6.1.1",
+    "vite-plugin-d2": "^1.0.0",
     "vite-plugin-sharp": "^1.0.0"
   }
 }

@@ -1,0 +1,80 @@
+title: "Derafu Mail Architecture"
+
+# Package Layer
+mailPackage: "MailPackage" {
+  shape: rectangle
+}
+
+# Component Layer
+exchangeComponent: "ExchangeComponent" {
+  shape: rectangle
+}
+
+# Worker Layer
+senderWorker: "SenderWorker" {
+  shape: rectangle
+}
+
+receiverWorker: "ReceiverWorker" {
+  shape: rectangle
+}
+
+# Handler Layer
+sendHandler: "SendHandler" {
+  shape: rectangle
+}
+
+receiveHandler: "ReceiveHandler" {
+  shape: rectangle
+}
+
+# Strategy Layer
+smtpStrategy: "SmtpStrategy" {
+  shape: rectangle
+}
+
+otherSendStrategy: "OtherSendStrategy" {
+  shape: rectangle
+}
+
+imapStrategy: "ImapStrategy" {
+  shape: rectangle
+}
+
+otherReceiveStrategy: "OtherReceiveStrategy" {
+  shape: rectangle
+}
+
+# Model Layer
+model: "Domain Models" {
+  envelope: "Envelope" {
+    shape: rectangle
+  }
+
+  message: "Message" {
+    shape: rectangle
+  }
+
+  postman: "Postman" {
+    shape: rectangle
+  }
+
+  mailbox: "Mailbox" {
+    shape: rectangle
+  }
+}
+
+# Relationships
+mailPackage -> exchangeComponent
+exchangeComponent -> senderWorker
+exchangeComponent -> receiverWorker
+senderWorker -> sendHandler
+receiverWorker -> receiveHandler
+sendHandler -> smtpStrategy
+sendHandler -> otherSendStrategy
+receiveHandler -> imapStrategy
+receiveHandler -> otherReceiveStrategy
+sendHandler -> model.envelope
+receiveHandler -> model.envelope
+model.envelope -> model.message
+model.postman -> model.envelope
