@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derafu: Mail - Elegant orchestration of email communications for PHP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/command-line/prism-command-line.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/match-braces/prism-match-braces.min.css" rel="stylesheet" />
+    <link href="https://derafu.org/foundation/css/styles.min.css" rel="stylesheet" />
+    </head>
+<body class="derafu-theme-earthstone">
+                <div id="header-container" class="sticky-top"></div>
+    
+            <div class="container">
+            <div class="row">
+                <main class="col-md-9">
+                    <div class="container py-4">
+    <div class="markdown-body"><h1><a id="content-creating-a-custom-receiver-strategy-for-derafu-mail" href="custom-receiver-strategy.html#content-creating-a-custom-receiver-strategy-for-derafu-mail" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Creating a Custom Receiver Strategy for Derafu Mail</h1>
+<p>This guide explains how to create custom receiver strategies for Derafu Mail. Receiver strategies allow you to implement different methods of retrieving emails beyond the default IMAP implementation.</p>
+<ul class="table-of-contents">
+<li><a href="custom-receiver-strategy.html#content-understanding-receiver-strategies">Understanding Receiver Strategies</a></li>
+<li><a href="custom-receiver-strategy.html#content-option-1-extending-abstractmailboxstrategy">Option 1: Extending AbstractMailboxStrategy</a>
+<ul>
+<li><a href="custom-receiver-strategy.html#content-when-to-use-this-approach">When to Use This Approach</a></li>
+<li><a href="custom-receiver-strategy.html#content-implementation-steps">Implementation Steps</a></li>
+<li><a href="custom-receiver-strategy.html#content-key-benefits">Key Benefits</a></li>
+</ul>
+</li>
+<li><a href="custom-receiver-strategy.html#content-option-2-implementing-receiverstrategyinterface">Option 2: Implementing ReceiverStrategyInterface</a>
+<ul>
+<li><a href="custom-receiver-strategy.html#content-when-to-use-this-approach-1">When to Use This Approach</a></li>
+<li><a href="custom-receiver-strategy.html#content-implementation-steps-1">Implementation Steps</a></li>
+<li><a href="custom-receiver-strategy.html#content-key-considerations">Key Considerations</a></li>
+</ul>
+</li>
+<li><a href="custom-receiver-strategy.html#content-usage">Usage</a></li>
+<li><a href="custom-receiver-strategy.html#content-best-practices">Best Practices</a></li>
+<li><a href="custom-receiver-strategy.html#content-conclusion">Conclusion</a></li>
+</ul>
+<h2><a id="content-understanding-receiver-strategies" href="custom-receiver-strategy.html#content-understanding-receiver-strategies" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Understanding Receiver Strategies</h2>
+<p>A receiver strategy in Derafu Mail is responsible for connecting to mail sources and retrieving messages. The library comes with an IMAP implementation, but you might want to add support for:</p>
+<ul>
+<li>API-based email services (Gmail API, Microsoft Graph, etc.).</li>
+<li>Custom email storage systems.</li>
+<li>Database-stored emails.</li>
+<li>Webhook receivers for incoming emails.</li>
+<li>Testing/mock implementations.</li>
+</ul>
+<h2><a id="content-option-1-extending-abstractmailboxstrategy" href="custom-receiver-strategy.html#content-option-1-extending-abstractmailboxstrategy" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Option 1: Extending AbstractMailboxStrategy</h2>
+<p>The simplest approach is to extend the <code>AbstractMailboxStrategy</code> class, which provides reusable functionality for email retrieval scenarios that use a mailbox-like interface.</p>
+<h3><a id="content-when-to-use-this-approach" href="custom-receiver-strategy.html#content-when-to-use-this-approach" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>When to Use This Approach</h3>
+<ul>
+<li>When your email source follows a mailbox paradigm.</li>
+<li>When you can use the PHP-IMAP library or similar interfaces.</li>
+<li>When you need to reuse common mailbox operations.</li>
+<li>When your strategy follows a similar workflow to the IMAP strategy.</li>
+</ul>
+<h3><a id="content-implementation-steps" href="custom-receiver-strategy.html#content-implementation-steps" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Implementation Steps</h3>
+<ol>
+<li>Create a new class that extends <code>AbstractMailboxStrategy</code>:</li>
+</ol>
+<pre><code class="line-numbers match-braces language-php">&lt;?php
+
+declare(strict_types=1);
+
+namespace YourNamespace\Strategy;
+
+use Derafu\Backbone\Attribute\Strategy;
+use Derafu\Config\Contract\OptionsInterface;
+use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Abstract\AbstractMailboxStrategy;
+use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Contract\ReceiverStrategyInterface;
+use Derafu\Mail\Model\Mailbox;
+use Derafu\Mail\Model\Contract\MailboxInterface;
+
+#[Strategy(name: 'gmail-api', worker: 'receiver', component: 'exchange', package: 'mail')]
+class GmailApiStrategy extends AbstractMailboxStrategy implements ReceiverStrategyInterface
+{
+    /**
+     * Schema of the options.
+     *
+     * @var array&lt;string,array&gt;
+     */
+    protected array $optionsSchema = [
+        'strategy' =&gt; [
+            'types' =&gt; 'string',
+            'default' =&gt; 'gmail-api',
+        ],
+        'transport' =&gt; [
+            'types' =&gt; 'array',
+            'schema' =&gt; [
+                'client_id' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'client_secret' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'refresh_token' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'user_email' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'label' =&gt; [
+                    'types' =&gt; 'string',
+                    'default' =&gt; 'INBOX',
+                ],
+                'dsn' =&gt; [
+                    'types' =&gt; 'string',
+                ],
+                'endpoint' =&gt; [
+                    'types' =&gt; 'string',
+                ],
+                'search' =&gt; [
+                    'types' =&gt; 'array',
+                    'schema' =&gt; [
+                        'query' =&gt; [
+                            'types' =&gt; 'string',
+                            'default' =&gt; 'is:unread',
+                        ],
+                        'markAsSeen' =&gt; [
+                            'types' =&gt; 'bool',
+                            'default' =&gt; false,
+                        ],
+                        'attachmentFilters' =&gt; [
+                            'types' =&gt; 'array',
+                            'default' =&gt; [],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function createMailbox(OptionsInterface $options): MailboxInterface
+    {
+        // Instead of using the standard Mailbox, create a specialized Gmail API mailbox.
+        // This could be a custom class that implements MailboxInterface.
+
+        $transportOptions = $options-&gt;get('transport');
+
+        // This would be a custom implementation for Gmail API.
+        return new GmailApiMailbox(
+            $transportOptions['client_id'],
+            $transportOptions['client_secret'],
+            $transportOptions['refresh_token'],
+            $transportOptions['user_email'],
+            $transportOptions['label'] ?? 'INBOX'
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function resolveDsn(OptionsInterface $options): string
+    {
+        $transportOptions = $options-&gt;get('transport');
+
+        if (!empty($transportOptions['dsn'])) {
+            return $transportOptions['dsn'];
+        }
+
+        // Construct a representative DSN for Gmail API.
+        $dsn = sprintf(
+            'gmail-api://%s',
+            $transportOptions['user_email']
+        );
+
+        $options-&gt;set('transport.dsn', $dsn);
+
+        return $dsn;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function resolveEndpoint(OptionsInterface $options): string
+    {
+        $transportOptions = $options-&gt;get('transport');
+
+        if (!empty($transportOptions['endpoint'])) {
+            return $transportOptions['endpoint'];
+        }
+
+        $endpoint = sprintf(
+            'https://gmail.googleapis.com/gmail/v1/users/%s',
+            $transportOptions['user_email']
+        );
+
+        $options-&gt;set('transport.endpoint', $endpoint);
+
+        return $endpoint;
+    }
+}
+
+/**
+ * Custom Mailbox implementation for Gmail API.
+ * This class would need to implement all methods from MailboxInterface
+ * but would use the Gmail API instead of IMAP.
+ */
+class GmailApiMailbox implements MailboxInterface
+{
+    // Implement all required methods from MailboxInterface.
+    // This would use Google API Client or similar to fetch emails.
+}
+</code></pre>
+<ol start="2">
+<li>
+<p>Define your options schema to specify the required configuration.</p>
+</li>
+<li>
+<p>Override the <code>createMailbox()</code> method to return your custom mailbox implementation.</p>
+</li>
+<li>
+<p>Implement the <code>resolveDsn()</code> and <code>resolveEndpoint()</code> methods.</p>
+</li>
+<li>
+<p>Create a custom mailbox class that implements <code>MailboxInterface</code> if needed.</p>
+</li>
+</ol>
+<h3><a id="content-key-benefits" href="custom-receiver-strategy.html#content-key-benefits" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Key Benefits</h3>
+<ul>
+<li>Leverages existing workflow and error handling.</li>
+<li>Preserves compatibility with the rest of the library.</li>
+<li>Reuses attachment filtering and other common functionality.</li>
+<li>Maintains consistent behavior across strategies.</li>
+</ul>
+<h2><a id="content-option-2-implementing-receiverstrategyinterface" href="custom-receiver-strategy.html#content-option-2-implementing-receiverstrategyinterface" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Option 2: Implementing ReceiverStrategyInterface</h2>
+<p>For more specialized use cases, you can implement the <code>ReceiverStrategyInterface</code> directly.</p>
+<h3><a id="content-when-to-use-this-approach-1" href="custom-receiver-strategy.html#content-when-to-use-this-approach-1" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>When to Use This Approach</h3>
+<ul>
+<li>When your receiving mechanism is fundamentally different from a mailbox model.</li>
+<li>When you need complete control over the receiving process.</li>
+<li>When you’re creating a strategy for webhooks or other non-polling mechanisms.</li>
+<li>For custom integrations with proprietary systems.</li>
+</ul>
+<h3><a id="content-implementation-steps-1" href="custom-receiver-strategy.html#content-implementation-steps-1" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Implementation Steps</h3>
+<ol>
+<li>Create a new class that implements <code>ReceiverStrategyInterface</code>:</li>
+</ol>
+<pre><code class="line-numbers match-braces language-php">&lt;?php
+
+declare(strict_types=1);
+
+namespace YourNamespace\Strategy;
+
+use Derafu\Backbone\Abstract\AbstractStrategy;
+use Derafu\Backbone\Attribute\Strategy;
+use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Contract\ReceiverStrategyInterface;
+use Derafu\Mail\Exception\MailException;
+use Derafu\Mail\Model\Contract\EnvelopeInterface;
+use Derafu\Mail\Model\Contract\MessageInterface;
+use Derafu\Mail\Model\Contract\PostmanInterface;
+use Derafu\Mail\Model\Envelope;
+use Derafu\Mail\Model\Message;
+use Symfony\Component\Mime\Address;
+use Throwable;
+
+#[Strategy(name: 'webhook-receiver', worker: 'receiver', component: 'exchange', package: 'mail')]
+class WebhookReceiverStrategy extends AbstractStrategy implements ReceiverStrategyInterface
+{
+    /**
+     * Schema of the options.
+     *
+     * @var array&lt;string,array&gt;
+     */
+    protected array $optionsSchema = [
+        'strategy' =&gt; [
+            'types' =&gt; 'string',
+            'default' =&gt; 'webhook-receiver',
+        ],
+        'transport' =&gt; [
+            'types' =&gt; 'array',
+            'schema' =&gt; [
+                'webhook_data' =&gt; [
+                    'types' =&gt; 'array',
+                    'required' =&gt; true,
+                ],
+                'secret_key' =&gt; [
+                    'types' =&gt; 'string',
+                    'default' =&gt; '',
+                ],
+                // Add any other configuration options needed.
+            ],
+        ],
+    ];
+
+    /**
+     * {@inheritDoc}
+     */
+    public function receive(PostmanInterface $postman): array
+    {
+        $options = $this-&gt;resolveOptions($postman-&gt;getOptions());
+        $transportOptions = $options-&gt;get('transport');
+
+        $webhookData = $transportOptions['webhook_data'];
+        $secretKey = $transportOptions['secret_key'] ?? '';
+
+        try {
+            // Validate webhook data if a secret is configured.
+            if ($secretKey &amp;&amp; !$this-&gt;validateWebhookSignature($webhookData, $secretKey)) {
+                throw new MailException('Invalid webhook signature');
+            }
+
+            // Process the webhook data to extract email information.
+            $emails = $this-&gt;processWebhookData($webhookData);
+
+            // Create envelopes and add them to the postman.
+            foreach ($emails as $emailData) {
+                $envelope = $this-&gt;createEnvelope($emailData);
+                $postman-&gt;addEnvelope($envelope);
+            }
+
+            // Optionally acknowledge receipt to the webhook source.
+            $this-&gt;acknowledgeReceipt($webhookData);
+
+        } catch (Throwable $e) {
+            throw new MailException(
+                sprintf(
+                    'An error occurred while processing webhook data: %s',
+                    $e-&gt;getMessage()
+                ),
+                0,
+                $e
+            );
+        }
+
+        return $postman-&gt;getEnvelopes();
+    }
+
+    /**
+     * Validates the webhook signature to ensure authenticity.
+     *
+     * @param array $webhookData
+     * @param string $secretKey
+     * @return bool
+     */
+    private function validateWebhookSignature(array $webhookData, string $secretKey): bool
+    {
+        // Implement signature validation logic.
+        // The exact implementation depends on how your webhook source signs requests.
+        return true; // Placeholder.
+    }
+
+    /**
+     * Processes the webhook data to extract email information.
+     *
+     * @param array $webhookData
+     * @return array
+     */
+    private function processWebhookData(array $webhookData): array
+    {
+        // Convert webhook data to a standardized email format.
+        // This will depend entirely on the webhook format you're receiving.
+
+        // Placeholder implementation - extract email data from webhook.
+        $emails = [];
+
+        if (isset($webhookData['emails']) &amp;&amp; is_array($webhookData['emails'])) {
+            foreach ($webhookData['emails'] as $email) {
+                $emails[] = [
+                    'from' =&gt; $email['sender'] ?? '',
+                    'from_name' =&gt; $email['sender_name'] ?? '',
+                    'to' =&gt; $email['recipient'] ?? '',
+                    'to_name' =&gt; $email['recipient_name'] ?? '',
+                    'subject' =&gt; $email['subject'] ?? '',
+                    'text_body' =&gt; $email['plain_text'] ?? '',
+                    'html_body' =&gt; $email['html'] ?? '',
+                    'attachments' =&gt; $email['attachments'] ?? [],
+                ];
+            }
+        }
+
+        return $emails;
+    }
+
+    /**
+     * Creates an envelope from email data.
+     *
+     * @param array $emailData
+     * @return EnvelopeInterface
+     */
+    private function createEnvelope(array $emailData): EnvelopeInterface
+    {
+        // Create a sender address.
+        $sender = new Address(
+            $emailData['from'],
+            $emailData['from_name'] ?? ''
+        );
+
+        // Create recipient addresses.
+        $recipients = [
+            new Address(
+                $emailData['to'],
+                $emailData['to_name'] ?? ''
+            )
+        ];
+
+        // Create the envelope.
+        $envelope = new Envelope($sender, $recipients);
+
+        // Create and add the message.
+        $message = $this-&gt;createMessage($emailData);
+        $envelope-&gt;addMessage($message);
+
+        return $envelope;
+    }
+
+    /**
+     * Creates a message from email data.
+     *
+     * @param array $emailData
+     * @return MessageInterface
+     */
+    private function createMessage(array $emailData): MessageInterface
+    {
+        // Create the message.
+        $message = new Message();
+
+        // Set basic properties
+        $message-&gt;subject($emailData['subject'] ?? '');
+
+        if (!empty($emailData['text_body'])) {
+            $message-&gt;text($emailData['text_body']);
+        }
+
+        if (!empty($emailData['html_body'])) {
+            $message-&gt;html($emailData['html_body']);
+        }
+
+        $message-&gt;from(new Address(
+            $emailData['from'],
+            $emailData['from_name'] ?? ''
+        ));
+
+        $message-&gt;to(new Address(
+            $emailData['to'],
+            $emailData['to_name'] ?? ''
+        ));
+
+        // Process attachments if any.
+        if (!empty($emailData['attachments']) &amp;&amp; is_array($emailData['attachments'])) {
+            foreach ($emailData['attachments'] as $attachment) {
+                if (isset($attachment['content'], $attachment['name'], $attachment['type'])) {
+                    $content = base64_decode($attachment['content']);
+                    $message-&gt;attach(
+                        $content,
+                        $attachment['name'],
+                        $attachment['type']
+                    );
+                }
+            }
+        }
+
+        return $message;
+    }
+
+    /**
+     * Acknowledges receipt to the webhook source if needed.
+     *
+     * @param array $webhookData
+     * @return void
+     */
+    private function acknowledgeReceipt(array $webhookData): void
+    {
+        // Some webhook providers require an acknowledgement.
+        // Implement if needed for your specific case.
+    }
+}
+</code></pre>
+<ol start="2">
+<li>
+<p>Define your options schema to specify the required configuration.</p>
+</li>
+<li>
+<p>Implement the <code>receive()</code> method to handle the entire receiving process.</p>
+</li>
+<li>
+<p>Add helper methods for your specific implementation needs.</p>
+</li>
+</ol>
+<h3><a id="content-key-considerations" href="custom-receiver-strategy.html#content-key-considerations" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Key Considerations</h3>
+<p>When implementing from scratch:</p>
+<ul>
+<li><strong>Error Handling</strong>: Properly catch and handle all exceptions.</li>
+<li><strong>Data Transformation</strong>: Carefully map external data to Derafu Mail models.</li>
+<li><strong>Security</strong>: Validate webhook signatures or implement other security measures.</li>
+<li><strong>Consistency</strong>: Ensure your implementation behaves consistently with other strategies.</li>
+<li><strong>Testing</strong>: Create comprehensive tests for your implementation.</li>
+</ul>
+<h2><a id="content-usage" href="custom-receiver-strategy.html#content-usage" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Usage</h2>
+<p>Once you’ve created your custom strategy, you can use it by specifying its name in the Postman configuration:</p>
+<pre><code class="line-numbers match-braces language-php">$postman = new Postman([
+    'strategy' =&gt; 'gmail-api', // Or 'webhook-receiver'
+    'transport' =&gt; [
+        // Strategy-specific configuration options.
+        'client_id' =&gt; 'your-client-id',
+        'client_secret' =&gt; 'your-client-secret',
+        'refresh_token' =&gt; 'your-refresh-token',
+        'user_email' =&gt; 'user@example.com',
+        // Other options...
+    ],
+]);
+
+$receiverWorker = $exchangeComponent-&gt;getReceiverWorker();
+$envelopes = $receiverWorker-&gt;receive($postman);
+</code></pre>
+<h2><a id="content-best-practices" href="custom-receiver-strategy.html#content-best-practices" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Best Practices</h2>
+<ol>
+<li><strong>Error Handling</strong>: Always catch and handle exceptions appropriately.</li>
+<li><strong>Logging</strong>: Add detailed logging to help troubleshoot issues.</li>
+<li><strong>Configuration Validation</strong>: Use the options schema to validate configuration.</li>
+<li><strong>Rate Limiting</strong>: Consider rate limits for API-based strategies.</li>
+<li><strong>Pagination</strong>: Implement proper pagination for retrieving large volumes of emails.</li>
+<li><strong>Performance</strong>: Be mindful of memory usage when dealing with attachments.</li>
+<li><strong>Documentation</strong>: Document your strategy’s specific requirements and limitations.</li>
+</ol>
+<h2><a id="content-conclusion" href="custom-receiver-strategy.html#content-conclusion" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Conclusion</h2>
+<p>Creating custom receiver strategies allows you to extend Derafu Mail to work with any email source or system. Whether you extend the abstract class or implement the interface directly depends on your specific needs and how much you want to leverage the existing infrastructure.</p>
+<p>For sources that follow a mailbox-like model, extending <code>AbstractMailboxStrategy</code> is recommended. For completely different mechanisms like webhooks, implementing <code>ReceiverStrategyInterface</code> directly gives you maximum flexibility.</p>
+</div>
+</div>
+                </main>
+                <div class="col-md-3 py-4">
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Package Info</div>
+                                <span class="smal text-muted">
+                                    <a href="https://github.com/derafu/mail" target="_blank" class="link-secondary text-decoration-none">
+                                        <i class="fa-brands fa-github"></i>
+                                        derafu/mail
+                                    </a>
+                                </span>
+                                <div class="my-2">
+                                    <img src="https://img.shields.io/github/stars/derafu/mail" alt="GitHub Repo stars">
+                                    <img src="https://img.shields.io/github/forks/derafu/mail" alt="GitHub forks">
+                                </div>
+                            </div>
+                        </li>
+                        <a href="index.html" class="list-group-item list-group-item-action ">
+                            README
+                        </a>
+                    </div>
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                            <div class="fw-bold">Docs</div>
+                            <span class="smal text-muted">Guides & Examples</span>
+                            </div>
+                        </li>
+                        <a href="architecture.html" class="list-group-item list-group-item-action ">
+                            Architecture
+                        </a>
+                        <a href="custom-sender-strategy.html" class="list-group-item list-group-item-action ">
+                            Custom Sender Strategy
+                        </a>
+                        <a href="custom-receiver-strategy.html" class="list-group-item list-group-item-action active">
+                            Custom Receiver Strategy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+            <div id="footer-container"></div>
+<script src="https://derafu.org/foundation/js/derafu.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/show-language/prism-show-language.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/command-line/prism-command-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/match-braces/prism-match-braces.min.js"></script>
+    </body>
+</html>

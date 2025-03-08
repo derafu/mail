@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derafu: Mail - Elegant orchestration of email communications for PHP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/command-line/prism-command-line.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/match-braces/prism-match-braces.min.css" rel="stylesheet" />
+    <link href="https://derafu.org/foundation/css/styles.min.css" rel="stylesheet" />
+    </head>
+<body class="derafu-theme-earthstone">
+                <div id="header-container" class="sticky-top"></div>
+    
+            <div class="container">
+            <div class="row">
+                <main class="col-md-9">
+                    <div class="container py-4">
+    <div class="markdown-body"><h1><a id="content-creating-a-custom-sender-strategy-for-derafu-mail" href="custom-sender-strategy.html#content-creating-a-custom-sender-strategy-for-derafu-mail" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Creating a Custom Sender Strategy for Derafu Mail</h1>
+<p>This guide explains how to create custom sender strategies for Derafu Mail. Sender strategies allow you to implement different methods of sending emails beyond the default SMTP implementation.</p>
+<ul class="table-of-contents">
+<li><a href="custom-sender-strategy.html#content-understanding-sender-strategies">Understanding Sender Strategies</a></li>
+<li><a href="custom-sender-strategy.html#content-option-1-extending-abstractmailerstrategy">Option 1: Extending AbstractMailerStrategy</a>
+<ul>
+<li><a href="custom-sender-strategy.html#content-when-to-use-this-approach">When to Use This Approach</a></li>
+<li><a href="custom-sender-strategy.html#content-implementation-steps">Implementation Steps</a></li>
+<li><a href="custom-sender-strategy.html#content-key-benefits">Key Benefits</a></li>
+</ul>
+</li>
+<li><a href="custom-sender-strategy.html#content-option-2-implementing-senderstrategyinterface">Option 2: Implementing SenderStrategyInterface</a>
+<ul>
+<li><a href="custom-sender-strategy.html#content-when-to-use-this-approach-1">When to Use This Approach</a></li>
+<li><a href="custom-sender-strategy.html#content-implementation-steps-1">Implementation Steps</a></li>
+<li><a href="custom-sender-strategy.html#content-key-considerations">Key Considerations</a></li>
+</ul>
+</li>
+<li><a href="custom-sender-strategy.html#content-usage">Usage</a></li>
+<li><a href="custom-sender-strategy.html#content-best-practices">Best Practices</a></li>
+<li><a href="custom-sender-strategy.html#content-conclusion">Conclusion</a></li>
+</ul>
+<h2><a id="content-understanding-sender-strategies" href="custom-sender-strategy.html#content-understanding-sender-strategies" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Understanding Sender Strategies</h2>
+<p>A sender strategy in Derafu Mail is responsible for the actual transmission of email messages. The library comes with an SMTP implementation, but you might want to add support for:</p>
+<ul>
+<li>API-based email services (SendGrid, Mailgun, Postmark, etc.).</li>
+<li>Custom internal email systems.</li>
+<li>Database-based email queues.</li>
+<li>Testing/mock implementations.</li>
+</ul>
+<h2><a id="content-option-1-extending-abstractmailerstrategy" href="custom-sender-strategy.html#content-option-1-extending-abstractmailerstrategy" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Option 1: Extending AbstractMailerStrategy</h2>
+<p>The simplest approach is to extend the <code>AbstractMailerStrategy</code> class, which provides reusable functionality for most email sending scenarios that utilize Symfony Mailer internally.</p>
+<h3><a id="content-when-to-use-this-approach" href="custom-sender-strategy.html#content-when-to-use-this-approach" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>When to Use This Approach</h3>
+<ul>
+<li>When your email service has a Symfony Transport implementation.</li>
+<li>When you need to reuse the core sending logic.</li>
+<li>When your strategy follows a similar workflow to the SMTP strategy.</li>
+</ul>
+<h3><a id="content-implementation-steps" href="custom-sender-strategy.html#content-implementation-steps" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Implementation Steps</h3>
+<ol>
+<li>Create a new class that extends <code>AbstractMailerStrategy</code>:</li>
+</ol>
+<pre><code class="line-numbers match-braces language-php">&lt;?php
+
+declare(strict_types=1);
+
+namespace YourNamespace\Strategy;
+
+use Derafu\Backbone\Attribute\Strategy;
+use Derafu\Config\Contract\OptionsInterface;
+use Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\Abstract\AbstractMailerStrategy;
+use Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\Contract\SenderStrategyInterface;
+
+#[Strategy(name: 'mailgun', worker: 'sender', component: 'exchange', package: 'mail')]
+class MailgunStrategy extends AbstractMailerStrategy implements SenderStrategyInterface
+{
+    /**
+     * Schema of the options.
+     *
+     * @var array&lt;string,array&gt;
+     */
+    protected array $optionsSchema = [
+        'strategy' =&gt; [
+            'types' =&gt; 'string',
+            'default' =&gt; 'mailgun',
+        ],
+        'transport' =&gt; [
+            'types' =&gt; 'array',
+            'schema' =&gt; [
+                'api_key' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'domain' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'region' =&gt; [
+                    'types' =&gt; 'string',
+                    'default' =&gt; 'us',
+                ],
+                'dsn' =&gt; [
+                    'types' =&gt; 'string',
+                ],
+                'endpoint' =&gt; [
+                    'types' =&gt; 'string',
+                ],
+            ],
+        ],
+    ];
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function resolveDsn(OptionsInterface $options): string
+    {
+        $transportOptions = $options-&gt;get('transport');
+
+        if (!empty($transportOptions['dsn'])) {
+            return $transportOptions['dsn'];
+        }
+
+        // Construct the DSN for Mailgun using Symfony's format.
+        $dsn = sprintf(
+            'mailgun://%s@%s?region=%s',
+            $transportOptions['api_key'],
+            $transportOptions['domain'],
+            $transportOptions['region'] ?? 'us'
+        );
+
+        $options-&gt;set('transport.dsn', $dsn);
+
+        return $dsn;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function resolveEndpoint(OptionsInterface $options): string
+    {
+        $transportOptions = $options-&gt;get('transport');
+
+        if (!empty($transportOptions['endpoint'])) {
+            return $transportOptions['endpoint'];
+        }
+
+        $endpoint = sprintf(
+            'mailgun://%s',
+            $transportOptions['domain']
+        );
+
+        $options-&gt;set('transport.endpoint', $endpoint);
+
+        return $endpoint;
+    }
+}
+</code></pre>
+<ol start="2">
+<li>
+<p>Define your options schema to specify the required configuration.</p>
+</li>
+<li>
+<p>Implement the <code>resolveDsn()</code> method to build the appropriate DSN string for your service.</p>
+</li>
+<li>
+<p>Implement the <code>resolveEndpoint()</code> method to provide a human-readable representation of the endpoint.</p>
+</li>
+</ol>
+<h3><a id="content-key-benefits" href="custom-sender-strategy.html#content-key-benefits" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Key Benefits</h3>
+<ul>
+<li>Leverages existing functionality from the abstract class.</li>
+<li>Reduces code duplication.</li>
+<li>Ensures consistent behavior across strategies.</li>
+<li>Automatically gets error handling and envelope processing.</li>
+</ul>
+<h2><a id="content-option-2-implementing-senderstrategyinterface" href="custom-sender-strategy.html#content-option-2-implementing-senderstrategyinterface" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Option 2: Implementing SenderStrategyInterface</h2>
+<p>For more specialized use cases, you can implement the <code>SenderStrategyInterface</code> directly.</p>
+<h3><a id="content-when-to-use-this-approach-1" href="custom-sender-strategy.html#content-when-to-use-this-approach-1" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>When to Use This Approach</h3>
+<ul>
+<li>When your sending mechanism is fundamentally different from Symfony Mailer.</li>
+<li>When you need complete control over the sending process.</li>
+<li>When you want to avoid dependencies on Symfony components.</li>
+<li>For custom integrations with proprietary systems</li>
+</ul>
+<h3><a id="content-implementation-steps-1" href="custom-sender-strategy.html#content-implementation-steps-1" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Implementation Steps</h3>
+<ol>
+<li>Create a new class that implements <code>SenderStrategyInterface</code>:</li>
+</ol>
+<pre><code class="line-numbers match-braces language-php">&lt;?php
+
+declare(strict_types=1);
+
+namespace YourNamespace\Strategy;
+
+use Derafu\Backbone\Abstract\AbstractStrategy;
+use Derafu\Backbone\Attribute\Strategy;
+use Derafu\Config\Contract\OptionsInterface;
+use Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\Contract\SenderStrategyInterface;
+use Derafu\Mail\Exception\MailException;
+use Derafu\Mail\Model\Contract\PostmanInterface;
+use GuzzleHttp\Client;
+use Throwable;
+
+#[Strategy(name: 'custom-api', worker: 'sender', component: 'exchange', package: 'mail')]
+class CustomApiStrategy extends AbstractStrategy implements SenderStrategyInterface
+{
+    /**
+     * Schema of the options.
+     *
+     * @var array&lt;string,array&gt;
+     */
+    protected array $optionsSchema = [
+        'strategy' =&gt; [
+            'types' =&gt; 'string',
+            'default' =&gt; 'custom-api',
+        ],
+        'transport' =&gt; [
+            'types' =&gt; 'array',
+            'schema' =&gt; [
+                'api_url' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                'api_key' =&gt; [
+                    'types' =&gt; 'string',
+                    'required' =&gt; true,
+                ],
+                // Add any other configuration options needed.
+            ],
+        ],
+    ];
+
+    /**
+     * HTTP client for API requests.
+     */
+    private Client $httpClient;
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        $this-&gt;httpClient = new Client();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function send(PostmanInterface $postman): array
+    {
+        $options = $this-&gt;resolveOptions($postman-&gt;getOptions());
+        $transportOptions = $options-&gt;get('transport');
+
+        $apiUrl = $transportOptions['api_url'];
+        $apiKey = $transportOptions['api_key'];
+
+        foreach ($postman-&gt;getEnvelopes() as $envelope) {
+            foreach ($envelope-&gt;getMessages() as $message) {
+                try {
+                    // Transform the message to your API format.
+                    $payload = $this-&gt;transformMessageToApiPayload($message, $envelope);
+
+                    // Send via your custom API.
+                    $response = $this-&gt;httpClient-&gt;post($apiUrl, [
+                        'headers' =&gt; [
+                            'Authorization' =&gt; 'Bearer ' . $apiKey,
+                            'Content-Type' =&gt; 'application/json',
+                        ],
+                        'json' =&gt; $payload,
+                    ]);
+
+                    // Process response if needed.
+                    if ($response-&gt;getStatusCode() &gt;= 400) {
+                        throw new MailException('API returned error: ' . $response-&gt;getBody());
+                    }
+
+                } catch (Throwable $e) {
+                    $message-&gt;error($e);
+                }
+            }
+        }
+
+        return $postman-&gt;getEnvelopes();
+    }
+
+    /**
+     * Transforms a message to the format expected by the API.
+     *
+     * @param MessageInterface $message
+     * @param EnvelopeInterface $envelope
+     * @return array
+     */
+    private function transformMessageToApiPayload($message, $envelope): array
+    {
+        // Implement the transformation logic for your specific API.
+        // This is where you map the Message and Envelope properties
+        // to whatever format your API expects.
+
+        return [
+            'from' =&gt; $this-&gt;formatAddress($message-&gt;getFrom()[0]),
+            'to' =&gt; array_map([$this, 'formatAddress'], $message-&gt;getTo()),
+            'subject' =&gt; $message-&gt;getSubject(),
+            'text' =&gt; $message-&gt;getTextBody(),
+            'html' =&gt; $message-&gt;getHtmlBody(),
+            // Handle attachments, CC, BCC, etc.
+        ];
+    }
+
+    /**
+     * Formats an email address for the API.
+     */
+    private function formatAddress($address): array
+    {
+        return [
+            'email' =&gt; $address-&gt;getAddress(),
+            'name' =&gt; $address-&gt;getName(),
+        ];
+    }
+}
+</code></pre>
+<ol start="2">
+<li>
+<p>Define your options schema to specify the required configuration.</p>
+</li>
+<li>
+<p>Implement the <code>send()</code> method to handle the entire sending process.</p>
+</li>
+<li>
+<p>Add any helper methods needed for your specific implementation.</p>
+</li>
+</ol>
+<h3><a id="content-key-considerations" href="custom-sender-strategy.html#content-key-considerations" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Key Considerations</h3>
+<p>When implementing from scratch:</p>
+<ul>
+<li><strong>Error Handling</strong>: You must handle all exceptions and errors.</li>
+<li><strong>Message Processing</strong>: You need to transform Derafu Mail messages to your API format.</li>
+<li><strong>State Management</strong>: Consider how to track message status and handle failures.</li>
+<li><strong>Testing</strong>: Create test cases for various scenarios and error conditions.</li>
+</ul>
+<h2><a id="content-usage" href="custom-sender-strategy.html#content-usage" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Usage</h2>
+<p>Once you’ve created your custom strategy, you can use it by specifying its name in the Postman configuration:</p>
+<pre><code class="line-numbers match-braces language-php">$postman = new Postman([
+    'strategy' =&gt; 'mailgun', // Or 'custom-api'
+    'transport' =&gt; [
+        // Strategy-specific configuration options.
+        'api_key' =&gt; 'your-api-key',
+        'domain' =&gt; 'your-domain.com',
+        // Other options...
+    ],
+]);
+</code></pre>
+<h2><a id="content-best-practices" href="custom-sender-strategy.html#content-best-practices" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Best Practices</h2>
+<ol>
+<li><strong>Error Handling</strong>: Always catch and properly handle exceptions.</li>
+<li><strong>Logging</strong>: Add appropriate logging to help troubleshoot issues.</li>
+<li><strong>Configuration Validation</strong>: Use the options schema to validate configuration.</li>
+<li><strong>Comprehensive Documentation</strong>: Document your strategy’s requirements.</li>
+<li><strong>Unit Testing</strong>: Create tests for various scenarios including error cases.</li>
+</ol>
+<h2><a id="content-conclusion" href="custom-sender-strategy.html#content-conclusion" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Conclusion</h2>
+<p>Creating custom sender strategies allows you to extend Derafu Mail to work with any email service or system. Whether you extend the abstract class or implement the interface directly depends on your specific needs and how much you want to leverage the existing infrastructure.</p>
+<p>For most API-based email services that have Symfony Transport implementations, extending <code>AbstractMailerStrategy</code> is recommended. For completely custom implementations, implementing <code>SenderStrategyInterface</code> directly gives you maximum flexibility.</p>
+</div>
+</div>
+                </main>
+                <div class="col-md-3 py-4">
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Package Info</div>
+                                <span class="smal text-muted">
+                                    <a href="https://github.com/derafu/mail" target="_blank" class="link-secondary text-decoration-none">
+                                        <i class="fa-brands fa-github"></i>
+                                        derafu/mail
+                                    </a>
+                                </span>
+                                <div class="my-2">
+                                    <img src="https://img.shields.io/github/stars/derafu/mail" alt="GitHub Repo stars">
+                                    <img src="https://img.shields.io/github/forks/derafu/mail" alt="GitHub forks">
+                                </div>
+                            </div>
+                        </li>
+                        <a href="index.html" class="list-group-item list-group-item-action ">
+                            README
+                        </a>
+                    </div>
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                            <div class="fw-bold">Docs</div>
+                            <span class="smal text-muted">Guides & Examples</span>
+                            </div>
+                        </li>
+                        <a href="architecture.html" class="list-group-item list-group-item-action ">
+                            Architecture
+                        </a>
+                        <a href="custom-sender-strategy.html" class="list-group-item list-group-item-action active">
+                            Custom Sender Strategy
+                        </a>
+                        <a href="custom-receiver-strategy.html" class="list-group-item list-group-item-action ">
+                            Custom Receiver Strategy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+            <div id="footer-container"></div>
+<script src="https://derafu.org/foundation/js/derafu.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/show-language/prism-show-language.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/command-line/prism-command-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/match-braces/prism-match-braces.min.js"></script>
+    </body>
+</html>

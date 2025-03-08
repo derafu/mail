@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derafu: Mail - Elegant orchestration of email communications for PHP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/command-line/prism-command-line.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/match-braces/prism-match-braces.min.css" rel="stylesheet" />
+    <link href="https://derafu.org/foundation/css/styles.min.css" rel="stylesheet" />
+    </head>
+<body class="derafu-theme-earthstone">
+                <div id="header-container" class="sticky-top"></div>
+    
+            <div class="container">
+            <div class="row">
+                <main class="col-md-9">
+                    <div class="container py-4">
+    <div class="markdown-body"><h1><a id="content-derafu-mail-architecture" href="architecture.html#content-derafu-mail-architecture" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Derafu Mail Architecture</h1>
+<p>This guide explains the architecture of the Derafu Mail library, which is built on the Derafu Backbone architectural framework. Understanding this architecture will help you effectively use and extend the library.</p>
+<ul class="table-of-contents">
+<li><a href="architecture.html#content-architectural-overview">Architectural Overview</a></li>
+<li><a href="architecture.html#content-package-layer">Package Layer</a></li>
+<li><a href="architecture.html#content-component-layer">Component Layer</a></li>
+<li><a href="architecture.html#content-worker-layer">Worker Layer</a>
+<ul>
+<li><a href="architecture.html#content-senderworker">SenderWorker</a></li>
+<li><a href="architecture.html#content-receiverworker">ReceiverWorker</a></li>
+</ul>
+</li>
+<li><a href="architecture.html#content-handler-layer">Handler Layer</a>
+<ul>
+<li><a href="architecture.html#content-sendhandler">SendHandler</a></li>
+<li><a href="architecture.html#content-receivehandler">ReceiveHandler</a></li>
+</ul>
+</li>
+<li><a href="architecture.html#content-strategy-layer">Strategy Layer</a>
+<ul>
+<li><a href="architecture.html#content-smtpstrategy">SmtpStrategy</a></li>
+<li><a href="architecture.html#content-imapstrategy">ImapStrategy</a></li>
+</ul>
+</li>
+<li><a href="architecture.html#content-abstract-base-classes">Abstract Base Classes</a>
+<ul>
+<li><a href="architecture.html#content-abstractmailerstrategy">AbstractMailerStrategy</a></li>
+<li><a href="architecture.html#content-abstractmailboxstrategy">AbstractMailboxStrategy</a></li>
+</ul>
+</li>
+<li><a href="architecture.html#content-model-layer">Model Layer</a>
+<ul>
+<li><a href="architecture.html#content-envelope">Envelope</a></li>
+<li><a href="architecture.html#content-message">Message</a></li>
+<li><a href="architecture.html#content-postman">Postman</a></li>
+<li><a href="architecture.html#content-mailbox">Mailbox</a></li>
+</ul>
+</li>
+<li><a href="architecture.html#content-data-flow-examples">Data Flow Examples</a>
+<ul>
+<li><a href="architecture.html#content-sending-an-email">Sending an Email</a></li>
+<li><a href="architecture.html#content-receiving-emails">Receiving Emails</a></li>
+</ul>
+</li>
+<li><a href="architecture.html#content-extending-the-library">Extending the Library</a></li>
+<li><a href="architecture.html#content-key-benefits-of-this-architecture">Key Benefits of This Architecture</a></li>
+<li><a href="architecture.html#content-conclusion">Conclusion</a></li>
+</ul>
+<h2><a id="content-architectural-overview" href="architecture.html#content-architectural-overview" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Architectural Overview</h2>
+<p>Derafu Mail follows a hierarchical architecture that separates concerns into distinct layers, each with specific responsibilities:</p>
+<ol>
+<li><strong>Package Layer</strong>: The entry point and container for all components.</li>
+<li><strong>Component Layer</strong>: Functional modules within the package.</li>
+<li><strong>Worker Layer</strong>: Task executors within components.</li>
+<li><strong>Handler Layer</strong>: Process orchestrators that coordinate strategies.</li>
+<li><strong>Strategy Layer</strong>: Specific implementations of mail operations.</li>
+<li><strong>Model Layer</strong>: Domain models representing email-related entities.</li>
+</ol>
+<p><img src="img/derafu-mail-architecture.svg" alt="Derafu Mail Architecture" /></p>
+<h2><a id="content-package-layer" href="architecture.html#content-package-layer" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Package Layer</h2>
+<p>The <code>MailPackage</code> serves as the entry point for the entire library, following the Package pattern from Derafu Backbone.</p>
+<pre><code class="line-numbers match-braces language-php">#[Package(name: 'mail')]
+class MailPackage extends AbstractPackage implements MailPackageInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Provides access to components (currently just <code>ExchangeComponent</code>).</li>
+<li>Acts as the root of the dependency tree.</li>
+<li>Maintains registry information for service discovery.</li>
+</ul>
+<h2><a id="content-component-layer" href="architecture.html#content-component-layer" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Component Layer</h2>
+<p>The <code>ExchangeComponent</code> represents a specific functional area within the mail domain, handling both sending and receiving of emails.</p>
+<pre><code class="line-numbers match-braces language-php">#[Component(name: 'exchange', package: 'mail')]
+class ExchangeComponent extends AbstractComponent implements ExchangeComponentInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Manages workers for sending and receiving emails.</li>
+<li>Provides access to these workers through getter methods.</li>
+<li>Groups related functionality under a single namespace.</li>
+</ul>
+<h2><a id="content-worker-layer" href="architecture.html#content-worker-layer" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Worker Layer</h2>
+<p>Workers expose the public API for specific tasks:</p>
+<h3><a id="content-senderworker" href="architecture.html#content-senderworker" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>SenderWorker</h3>
+<pre><code class="line-numbers match-braces language-php">#[Worker(name: 'sender', component: 'exchange', package: 'mail')]
+class SenderWorker extends AbstractWorker implements SenderWorkerInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Provides a public <code>send()</code> method for sending emails.</li>
+<li>Delegates the actual sending process to handlers.</li>
+<li>Manages any worker-specific resources.</li>
+</ul>
+<h3><a id="content-receiverworker" href="architecture.html#content-receiverworker" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>ReceiverWorker</h3>
+<pre><code class="line-numbers match-braces language-php">#[Worker(name: 'receiver', component: 'exchange', package: 'mail')]
+class ReceiverWorker extends AbstractWorker implements ReceiverWorkerInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Provides a public <code>receive()</code> method for receiving emails.</li>
+<li>Delegates the receiving process to handlers.</li>
+<li>Manages any worker-specific resources.</li>
+</ul>
+<h2><a id="content-handler-layer" href="architecture.html#content-handler-layer" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Handler Layer</h2>
+<p>Handlers orchestrate complex processes, selecting appropriate strategies and managing the workflow:</p>
+<h3><a id="content-sendhandler" href="architecture.html#content-sendhandler" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>SendHandler</h3>
+<pre><code class="line-numbers match-braces language-php">class SendHandler extends AbstractHandler
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Selects the appropriate sending strategy based on configuration.</li>
+<li>Orchestrates the email sending process.</li>
+<li>Handles errors in a centralized manner.</li>
+<li>Manages options and configuration.</li>
+</ul>
+<h3><a id="content-receivehandler" href="architecture.html#content-receivehandler" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>ReceiveHandler</h3>
+<pre><code class="line-numbers match-braces language-php">class ReceiveHandler extends AbstractHandler
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Selects the appropriate receiving strategy based on configuration.</li>
+<li>Orchestrates the email receiving process.</li>
+<li>Handles errors in a centralized manner.</li>
+<li>Manages options and configuration.</li>
+</ul>
+<h2><a id="content-strategy-layer" href="architecture.html#content-strategy-layer" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Strategy Layer</h2>
+<p>Strategies implement specific methods for sending or receiving emails:</p>
+<h3><a id="content-smtpstrategy" href="architecture.html#content-smtpstrategy" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>SmtpStrategy</h3>
+<pre><code class="line-numbers match-braces language-php">#[Strategy(name: 'smtp', worker: 'sender', component: 'exchange', package: 'mail')]
+class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Configures and uses Symfony Mailer for SMTP transport.</li>
+<li>Builds appropriate DSN string based on configuration.</li>
+<li>Handles the actual sending of emails.</li>
+<li>Manages SMTP-specific settings.</li>
+</ul>
+<h3><a id="content-imapstrategy" href="architecture.html#content-imapstrategy" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>ImapStrategy</h3>
+<pre><code class="line-numbers match-braces language-php">#[Strategy(name: 'imap', worker: 'receiver', component: 'exchange', package: 'mail')]
+class ImapStrategy extends AbstractMailboxStrategy implements ReceiverStrategyInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Configures and uses PHP-IMAP for IMAP access.</li>
+<li>Builds appropriate DSN string for IMAP connection.</li>
+<li>Searches for and retrieves emails based on criteria.</li>
+<li>Manages IMAP-specific settings.</li>
+</ul>
+<h2><a id="content-abstract-base-classes" href="architecture.html#content-abstract-base-classes" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Abstract Base Classes</h2>
+<p>The library provides abstract base classes that implement common functionality:</p>
+<h3><a id="content-abstractmailerstrategy" href="architecture.html#content-abstractmailerstrategy" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>AbstractMailerStrategy</h3>
+<pre><code class="line-numbers match-braces language-php">abstract class AbstractMailerStrategy extends AbstractStrategy implements SenderStrategyInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Provides common code for email sending strategies.</li>
+<li>Handles the creation of Symfony Mailer instances.</li>
+<li>Processes envelopes and messages.</li>
+</ul>
+<h3><a id="content-abstractmailboxstrategy" href="architecture.html#content-abstractmailboxstrategy" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>AbstractMailboxStrategy</h3>
+<pre><code class="line-numbers match-braces language-php">abstract class AbstractMailboxStrategy extends AbstractStrategy implements ReceiverStrategyInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Provides common code for email receiving strategies.</li>
+<li>Handles the creation of Mailbox instances.</li>
+<li>Processes received emails into envelopes.</li>
+</ul>
+<h2><a id="content-model-layer" href="architecture.html#content-model-layer" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Model Layer</h2>
+<p>Domain models represent the core entities of the email domain:</p>
+<h3><a id="content-envelope" href="architecture.html#content-envelope" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Envelope</h3>
+<pre><code class="line-numbers match-braces language-php">class Envelope extends SymfonyEnvelope implements EnvelopeInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Contains sender and recipient information.</li>
+<li>Holds one or more messages.</li>
+<li>Provides a container for email communication.</li>
+</ul>
+<h3><a id="content-message" href="architecture.html#content-message" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Message</h3>
+<pre><code class="line-numbers match-braces language-php">class Message extends SymfonyEmail implements MessageInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Represents an individual email message.</li>
+<li>Contains subject, body, attachments, etc.</li>
+<li>Tracks sending/receiving errors.</li>
+</ul>
+<h3><a id="content-postman" href="architecture.html#content-postman" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Postman</h3>
+<pre><code class="line-numbers match-braces language-php">class Postman implements PostmanInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Acts as a transport container for envelopes.</li>
+<li>Holds configuration options for sending/receiving.</li>
+<li>Provides a unified interface for email operations.</li>
+</ul>
+<h3><a id="content-mailbox" href="architecture.html#content-mailbox" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Mailbox</h3>
+<pre><code class="line-numbers match-braces language-php">class Mailbox implements MailboxInterface
+</code></pre>
+<p><strong>Responsibilities</strong>:</p>
+<ul>
+<li>Represents an email mailbox (IMAP folder).</li>
+<li>Provides methods for searching and retrieving emails.</li>
+<li>Handles connection to mail servers.</li>
+</ul>
+<h2><a id="content-data-flow-examples" href="architecture.html#content-data-flow-examples" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Data Flow Examples</h2>
+<h3><a id="content-sending-an-email" href="architecture.html#content-sending-an-email" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Sending an Email</h3>
+<ol>
+<li>Client code creates a Message and adds it to an Envelope.</li>
+<li>Envelope is added to a Postman with SMTP configuration.</li>
+<li>Client calls SenderWorker’s send() method with the Postman.</li>
+<li>SenderWorker delegates to SendHandler.</li>
+<li>SendHandler selects SmtpStrategy based on configuration.</li>
+<li>SmtpStrategy uses Symfony Mailer to send the emails.</li>
+<li>Results are returned through the same chain.</li>
+</ol>
+<h3><a id="content-receiving-emails" href="architecture.html#content-receiving-emails" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Receiving Emails</h3>
+<ol>
+<li>Client creates a Postman with IMAP configuration.</li>
+<li>Client calls ReceiverWorker’s receive() method with the Postman.</li>
+<li>ReceiverWorker delegates to ReceiveHandler.</li>
+<li>ReceiveHandler selects ImapStrategy based on configuration.</li>
+<li>ImapStrategy connects to the mailbox and retrieves emails.</li>
+<li>Retrieved emails are converted to Envelopes with Messages.</li>
+<li>Envelopes are added to the Postman and returned.</li>
+</ol>
+<h2><a id="content-extending-the-library" href="architecture.html#content-extending-the-library" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Extending the Library</h2>
+<p>The architecture makes it easy to extend the library with new strategies:</p>
+<ol>
+<li><strong>New Sending Strategy</strong>: Create a class that extends AbstractMailerStrategy or implements SenderStrategyInterface.</li>
+<li><strong>New Receiving Strategy</strong>: Create a class that extends AbstractMailboxStrategy or implements ReceiverStrategyInterface.</li>
+<li><strong>Tag with Attribute</strong>: Use the #[Strategy] attribute for automatic discovery.</li>
+<li><strong>Use via Configuration</strong>: Specify your strategy in the Postman options.</li>
+</ol>
+<h2><a id="content-key-benefits-of-this-architecture" href="architecture.html#content-key-benefits-of-this-architecture" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Key Benefits of This Architecture</h2>
+<ol>
+<li><strong>Separation of Concerns</strong>: Each class has a single, well-defined responsibility.</li>
+<li><strong>Extensibility</strong>: Easy to add new strategies without modifying existing code.</li>
+<li><strong>Testability</strong>: Clean interfaces make unit testing straightforward.</li>
+<li><strong>Configurability</strong>: Comprehensive options at every level.</li>
+<li><strong>Maintainability</strong>: Clear structure makes code easy to understand and modify.</li>
+</ol>
+<h2><a id="content-conclusion" href="architecture.html#content-conclusion" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Conclusion</h2>
+<p>Derafu Mail’s architecture provides a solid foundation for email operations in PHP applications. By leveraging the Derafu Backbone patterns, it achieves a clean separation of concerns while remaining flexible and extensible.</p>
+<p>Understanding this architecture will help you effectively use the library and extend it with new capabilities when needed.</p>
+</div>
+</div>
+                </main>
+                <div class="col-md-3 py-4">
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Package Info</div>
+                                <span class="smal text-muted">
+                                    <a href="https://github.com/derafu/mail" target="_blank" class="link-secondary text-decoration-none">
+                                        <i class="fa-brands fa-github"></i>
+                                        derafu/mail
+                                    </a>
+                                </span>
+                                <div class="my-2">
+                                    <img src="https://img.shields.io/github/stars/derafu/mail" alt="GitHub Repo stars">
+                                    <img src="https://img.shields.io/github/forks/derafu/mail" alt="GitHub forks">
+                                </div>
+                            </div>
+                        </li>
+                        <a href="index.html" class="list-group-item list-group-item-action ">
+                            README
+                        </a>
+                    </div>
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                            <div class="fw-bold">Docs</div>
+                            <span class="smal text-muted">Guides & Examples</span>
+                            </div>
+                        </li>
+                        <a href="architecture.html" class="list-group-item list-group-item-action active">
+                            Architecture
+                        </a>
+                        <a href="custom-sender-strategy.html" class="list-group-item list-group-item-action ">
+                            Custom Sender Strategy
+                        </a>
+                        <a href="custom-receiver-strategy.html" class="list-group-item list-group-item-action ">
+                            Custom Receiver Strategy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+            <div id="footer-container"></div>
+<script src="https://derafu.org/foundation/js/derafu.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/show-language/prism-show-language.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/command-line/prism-command-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/match-braces/prism-match-braces.min.js"></script>
+    </body>
+</html>

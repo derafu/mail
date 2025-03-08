@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Derafu: Mail - PHP Mailing Library</title>
+    <title>Derafu: Mail - Elegant orchestration of email communications for PHP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown-light.min.css" rel="stylesheet" />
@@ -17,27 +17,202 @@
 <body class="derafu-theme-earthstone">
                 <div id="header-container" class="sticky-top"></div>
     
-            <main>
-            <div class="container py-4">
-    <div class="markdown-body"><h1><a id="content-derafu-mail---php-mailing-library" href="index.html#content-derafu-mail---php-mailing-library" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Derafu: Mail - PHP Mailing Library</h1>
+            <div class="container">
+            <div class="row">
+                <main class="col-md-9">
+                    <div class="container py-4">
+    <div class="markdown-body"><h1><a id="content-derafu-mail---elegant-orchestration-of-email-communications-for-php" href="index.html#content-derafu-mail---elegant-orchestration-of-email-communications-for-php" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Derafu: Mail - Elegant orchestration of email communications for PHP</h1>
+<p>A flexible PHP email library, built on Derafu Backbone architecture, that leverages other libraries and orchestrates the entire sending and receiving process.</p>
 <p><img src="https://img.shields.io/github/last-commit/derafu/mail/main" alt="GitHub last commit" />
 <img src="https://github.com/derafu/mail/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI Workflow" />
 <img src="https://img.shields.io/github/languages/code-size/derafu/mail" alt="GitHub code size in bytes" />
 <img src="https://img.shields.io/github/issues-raw/derafu/mail" alt="GitHub Issues" />
 <img src="https://poser.pugx.org/derafu/mail/downloads" alt="Total Downloads" />
 <img src="https://poser.pugx.org/derafu/mail/d/monthly" alt="Monthly Downloads" /></p>
-<hr />
-<blockquote>
-<p>WIP: Work In Progress.</p>
-</blockquote>
-<hr />
+<h2><a id="content-overview" href="index.html#content-overview" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Overview</h2>
+<p>Derafu Mail provides a robust, extensible framework for sending and receiving emails in PHP applications. Built on the <a rel="nofollow noopener noreferrer" target="_blank" class="external-link" href="https://derafu.org/backbone/">Derafu Backbone architecture</a>, it offers a clean, maintainable structure with clear separation of concerns.</p>
+<h2><a id="content-features" href="index.html#content-features" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Features</h2>
+<ul>
+<li><strong>Clean Architecture</strong>: Follows the Derafu Backbone hierarchical structure.</li>
+<li><strong>Sending Emails</strong>: SMTP support with easy extensibility for other transport methods.</li>
+<li><strong>Receiving Emails</strong>: IMAP support with customizable search criteria and filtering.</li>
+<li><strong>Flexible Configuration</strong>: Comprehensive options for both sending and receiving.</li>
+<li><strong>Robust Error Handling</strong>: Proper exception handling throughout the library.</li>
+<li><strong>Attachment Management</strong>: Support for both sending and receiving attachments.</li>
+<li><strong>Strategy Pattern</strong>: Easily swap out sending/receiving implementations.</li>
+</ul>
+<h2><a id="content-installation" href="index.html#content-installation" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Installation</h2>
+<p>Install the package via Composer:</p>
+<pre><code class="line-numbers match-braces language-bash">composer require derafu/mail
+</code></pre>
+<h2><a id="content-quick-start" href="index.html#content-quick-start" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Quick Start</h2>
+<h3><a id="content-sending-emails" href="index.html#content-sending-emails" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Sending Emails</h3>
+<pre><code class="line-numbers match-braces language-php">use Derafu\Backbone\Contract\PackageRegistryInterface;
+use Derafu\Mail\Model\Message;
+use Derafu\Mail\Model\Envelope;
+use Derafu\Mail\Model\Postman;
+use Symfony\Component\Mime\Address;
+
+// Find the package registry using dependency injection and get a $senderWorker
+// Also you can inject directly the SenderWorkerInterface wherever you want.
+$packageRegistry = $container-&gt;get(PackageRegistryInterface::class);
+$mailPackage = $packageRegistry-&gt;getPackage('mail');
+$exchangeComponent = $mailPackage-&gt;getExchangeComponent();
+$senderWorker = $exchangeComponent-&gt;getSenderWorker();
+
+// Create a message.
+$message = new Message();
+$message-&gt;subject('Hello World')
+    -&gt;text('This is a plain text message')
+    -&gt;html('&lt;h1&gt;Hello World&lt;/h1&gt;&lt;p&gt;This is an HTML message&lt;/p&gt;')
+    -&gt;from(new Address('sender@example.com', 'Sender Name'))
+    -&gt;to(new Address('recipient@example.com', 'Recipient Name'));
+
+// Create an envelope and add the message.
+$envelope = new Envelope(
+    new Address('sender@example.com', 'Sender Name'),
+    [new Address('recipient@example.com', 'Recipient Name')]
+);
+$envelope-&gt;addMessage($message);
+
+// Create a postman with SMTP configuration.
+$postman = new Postman([
+    'strategy' =&gt; 'smtp',
+    'transport' =&gt; [
+        'host' =&gt; 'smtp.example.com',
+        'port' =&gt; 587,
+        'encryption' =&gt; 'tls',
+        'username' =&gt; 'your_username',
+        'password' =&gt; 'your_password',
+    ],
+]);
+$postman-&gt;addEnvelope($envelope);
+
+// Send the email.
+$envelopes = $senderWorker-&gt;send($postman);
+</code></pre>
+<h3><a id="content-receiving-emails" href="index.html#content-receiving-emails" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Receiving Emails</h3>
+<pre><code class="line-numbers match-braces language-php">use Derafu\Backbone\Contract\PackageRegistryInterface;
+use Derafu\Mail\Model\Postman;
+
+// Find the package registry using dependency injection and get a $receiverWorker
+// Also you can inject directly the ReceiverWorkerInterface wherever you want.
+$packageRegistry = $container-&gt;get(PackageRegistryInterface::class);
+$mailPackage = $packageRegistry-&gt;getPackage('mail');
+$exchangeComponent = $mailPackage-&gt;getExchangeComponent();
+$receiverWorker = $exchangeComponent-&gt;getReceiverWorker();
+
+// Create a postman with IMAP configuration.
+$postman = new Postman([
+    'strategy' =&gt; 'imap',
+    'transport' =&gt; [
+        'host' =&gt; 'imap.example.com',
+        'port' =&gt; 993,
+        'encryption' =&gt; 'ssl',
+        'username' =&gt; 'your_username',
+        'password' =&gt; 'your_password',
+        'mailbox' =&gt; 'INBOX',
+        'search' =&gt; [
+            'criteria' =&gt; 'UNSEEN',
+            'markAsSeen' =&gt; true,
+            'attachmentFilters' =&gt; [
+                'extension' =&gt; ['pdf', 'doc', 'docx'],
+            ],
+        ],
+    ],
+]);
+
+// Receive emails.
+$envelopes = $receiverWorker-&gt;receive($postman);
+
+// Process received emails.
+foreach ($envelopes as $envelope) {
+    foreach ($envelope-&gt;getMessages() as $message) {
+        echo &quot;Subject: &quot; . $message-&gt;getSubject() . PHP_EOL;
+        echo &quot;From: &quot; . $message-&gt;getFrom()[0]-&gt;getAddress() . PHP_EOL;
+        echo &quot;Body: &quot; . $message-&gt;getTextBody() . PHP_EOL;
+
+        // Process attachments.
+        foreach ($message-&gt;getAttachments() as $attachment) {
+            file_put_contents('/path/to/save/' . $attachment-&gt;getFilename(), $attachment-&gt;getBody());
+        }
+    }
+}
+</code></pre>
+<h2><a id="content-extending-with-new-strategies" href="index.html#content-extending-with-new-strategies" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Extending with New Strategies</h2>
+<p>The library is designed to be easily extended with new sending or receiving strategies:</p>
+<ol>
+<li>Create a new strategy class implementing <code>SenderStrategyInterface</code> or <code>ReceiverStrategyInterface</code>.</li>
+<li>Tag it with the appropriate attribute.</li>
+</ol>
+<p>Example:</p>
+<pre><code class="line-numbers match-braces language-php">use Derafu\Backbone\Attribute\Strategy;
+use Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\Abstract\AbstractMailerStrategy;
+use Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\Contract\SenderStrategyInterface;
+
+#[Strategy(name: 'mailgun', worker: 'sender', component: 'exchange', package: 'mail')]
+class MailgunStrategy extends AbstractMailerStrategy implements SenderStrategyInterface
+{
+    // Implementation of SenderStrategyInterface that leverages AbstractMailerStrategy.
+}
+</code></pre>
+<h2><a id="content-architecture" href="index.html#content-architecture" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Architecture</h2>
+<p>Derafu Mail follows the Derafu Backbone architecture:</p>
+<ul>
+<li><strong>Package</strong>: MailPackage - The main entry point.</li>
+<li><strong>Component</strong>: ExchangeComponent - Handles email exchange.</li>
+<li><strong>Workers</strong>: SenderWorker and ReceiverWorker - Handle sending and receiving.</li>
+<li><strong>Handlers</strong>: SendHandler and ReceiveHandler - Orchestrate the process.</li>
+<li><strong>Strategies</strong>: Implement different methods of sending or receiving.</li>
+</ul>
 <h2><a id="content-contributing" href="index.html#content-contributing" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>Contributing</h2>
 <p>Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.</p>
 <h2><a id="content-license" href="index.html#content-license" class="text-decoration-none small text-muted" aria-hidden="true" title="Permalink"><i class="fa-solid fa-link"></i> </a>License</h2>
 <p>This package is open-sourced software licensed under the <a rel="nofollow noopener noreferrer" target="_blank" class="external-link" href="https://opensource.org/licenses/MIT">MIT license</a>.</p>
 </div>
 </div>
-        </main>
+                </main>
+                <div class="col-md-3 py-4">
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Package Info</div>
+                                <span class="smal text-muted">
+                                    <a href="https://github.com/derafu/mail" target="_blank" class="link-secondary text-decoration-none">
+                                        <i class="fa-brands fa-github"></i>
+                                        derafu/mail
+                                    </a>
+                                </span>
+                                <div class="my-2">
+                                    <img src="https://img.shields.io/github/stars/derafu/mail" alt="GitHub Repo stars">
+                                    <img src="https://img.shields.io/github/forks/derafu/mail" alt="GitHub forks">
+                                </div>
+                            </div>
+                        </li>
+                        <a href="index.html" class="list-group-item list-group-item-action active">
+                            README
+                        </a>
+                    </div>
+                    <div class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                            <div class="fw-bold">Docs</div>
+                            <span class="smal text-muted">Guides & Examples</span>
+                            </div>
+                        </li>
+                        <a href="architecture.html" class="list-group-item list-group-item-action ">
+                            Architecture
+                        </a>
+                        <a href="custom-sender-strategy.html" class="list-group-item list-group-item-action ">
+                            Custom Sender Strategy
+                        </a>
+                        <a href="custom-receiver-strategy.html" class="list-group-item list-group-item-action ">
+                            Custom Receiver Strategy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     
             <div id="footer-container"></div>
 <script src="https://derafu.org/foundation/js/derafu.js"></script>
