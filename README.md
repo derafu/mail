@@ -1,13 +1,13 @@
 # Derafu: Mail - Elegant orchestration of email communications for PHP
 
-A flexible PHP email library, built on Derafu Backbone architecture, that leverages other libraries and orchestrates the entire sending and receiving process.
-
 ![GitHub last commit](https://img.shields.io/github/last-commit/derafu/mail/main)
 ![CI Workflow](https://github.com/derafu/mail/actions/workflows/ci.yml/badge.svg?branch=main&event=push)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/derafu/mail)
 ![GitHub Issues](https://img.shields.io/github/issues-raw/derafu/mail)
 ![Total Downloads](https://poser.pugx.org/derafu/mail/downloads)
 ![Monthly Downloads](https://poser.pugx.org/derafu/mail/d/monthly)
+
+A flexible PHP email library, built on Derafu Backbone architecture, that leverages other libraries and orchestrates the entire sending and receiving process.
 
 ## Overview
 
