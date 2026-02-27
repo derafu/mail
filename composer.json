@@ -25,15 +25,15 @@
         }
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.5",
         "derafu/backbone": "dev-main"
     },
     "require-dev": {
         "ext-xdebug": "*",
-        "friendsofphp/php-cs-fixer": "^3.63",
+        "friendsofphp/php-cs-fixer": "^3.94",
         "phpstan/phpstan": "^1.12",
-        "phpunit/phpunit": "^11.4",
-        "symfony/mailer": "^7.2",
+        "phpunit/phpunit": "^11.5",
+        "symfony/mailer": "^7.4",
         "php-imap/php-imap": "^5.0"
     },
     "scripts": {
