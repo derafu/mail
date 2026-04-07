@@ -13,10 +13,10 @@ declare(strict_types=1);
 namespace Derafu\TestsMail;
 
 use DateTimeImmutable;
-use Derafu\Mail\Component\Exchange\Worker\Receiver\Contract\ReceiverWorkerInterface;
+use Derafu\Mail\Component\Exchange\Contract\ReceiverWorkerInterface;
 use Derafu\Mail\Component\Exchange\Worker\Receiver\Handler\ReceiveHandler;
-use Derafu\Mail\Component\Exchange\Worker\Receiver\ReceiverWorker;
 use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\ImapStrategy;
+use Derafu\Mail\Component\Exchange\Worker\ReceiverWorker;
 use Derafu\Mail\Model\Envelope;
 use Derafu\Mail\Model\Factory\EnvelopeFactory;
 use Derafu\Mail\Model\Mailbox;

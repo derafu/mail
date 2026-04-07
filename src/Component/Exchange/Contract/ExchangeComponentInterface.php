@@ -13,8 +13,6 @@ declare(strict_types=1);
 namespace Derafu\Mail\Component\Exchange\Contract;
 
 use Derafu\Backbone\Contract\ComponentInterface;
-use Derafu\Mail\Component\Exchange\Worker\Receiver\Contract\ReceiverWorkerInterface;
-use Derafu\Mail\Component\Exchange\Worker\Sender\Contract\SenderWorkerInterface;
 
 /**
  * Interface for the email service.

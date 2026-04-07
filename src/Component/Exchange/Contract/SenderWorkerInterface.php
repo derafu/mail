@@ -10,23 +10,23 @@ declare(strict_types=1);
  * See LICENSE file for more details.
  */
 
-namespace Derafu\Mail\Component\Exchange\Worker\Receiver\Contract;
+namespace Derafu\Mail\Component\Exchange\Contract;
 
 use Derafu\Backbone\Contract\WorkerInterface;
 use Derafu\Mail\Model\Contract\EnvelopeInterface;
 use Derafu\Mail\Model\Contract\PostmanInterface;
 
 /**
- * Interface for the worker "mail.exchange.receiver".
+ * Interface for the worker "mail.exchange.sender".
  */
-interface ReceiverWorkerInterface extends WorkerInterface
+interface SenderWorkerInterface extends WorkerInterface
 {
     /**
-     * Receives envelopes with messages from email using the transport options
+     * Sends envelopes with messages through email using the transport options
      * defined in the postman.
      *
      * @param PostmanInterface $postman Postman for the email transport.
-     * @return EnvelopeInterface[] Envelopes with messages received.
+     * @return EnvelopeInterface[] Envelopes with messages sent.
      */
-    public function receive(PostmanInterface $postman): array;
+    public function send(PostmanInterface $postman): array;
 }

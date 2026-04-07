@@ -15,8 +15,8 @@ namespace Derafu\Mail\Component\Exchange;
 use Derafu\Backbone\Abstract\AbstractComponent;
 use Derafu\Backbone\Attribute\Component;
 use Derafu\Mail\Component\Exchange\Contract\ExchangeComponentInterface;
-use Derafu\Mail\Component\Exchange\Worker\Receiver\Contract\ReceiverWorkerInterface;
-use Derafu\Mail\Component\Exchange\Worker\Sender\Contract\SenderWorkerInterface;
+use Derafu\Mail\Component\Exchange\Contract\ReceiverWorkerInterface;
+use Derafu\Mail\Component\Exchange\Contract\SenderWorkerInterface;
 
 /**
  * Mail component.

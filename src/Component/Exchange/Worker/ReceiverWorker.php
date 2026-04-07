@@ -10,20 +10,20 @@ declare(strict_types=1);
  * See LICENSE file for more details.
  */
 
-namespace Derafu\Mail\Component\Exchange\Worker\Sender;
+namespace Derafu\Mail\Component\Exchange\Worker;
 
 use Derafu\Backbone\Abstract\AbstractWorker;
 use Derafu\Backbone\Attribute\Worker;
 use Derafu\Backbone\Contract\HandlerInterface;
-use Derafu\Mail\Component\Exchange\Worker\Sender\Contract\SenderWorkerInterface;
-use Derafu\Mail\Component\Exchange\Worker\Sender\Handler\SendHandler;
+use Derafu\Mail\Component\Exchange\Contract\ReceiverWorkerInterface;
+use Derafu\Mail\Component\Exchange\Worker\Receiver\Handler\ReceiveHandler;
 use Derafu\Mail\Model\Contract\PostmanInterface;
 
 /**
- * Worker for sending emails.
+ * Worker for receiving emails.
  */
-#[Worker(name: 'sender', component: 'exchange', package: 'mail')]
-class SenderWorker extends AbstractWorker implements SenderWorkerInterface
+#[Worker(name: 'receiver', component: 'exchange', package: 'mail')]
+class ReceiverWorker extends AbstractWorker implements ReceiverWorkerInterface
 {
     /**
      * Constructor of the worker with its dependencies.
@@ -38,13 +38,13 @@ class SenderWorker extends AbstractWorker implements SenderWorkerInterface
     /**
      * {@inheritDoc}
      */
-    public function send(PostmanInterface $postman): array
+    public function receive(PostmanInterface $postman): array
     {
-        // Get the handler that will orchestrate the sending process.
-        $handler = $this->getHandler('send');
-        assert($handler instanceof SendHandler);
+        // Get the handler that will orchestrate the receiving process
+        $handler = $this->getHandler('receive');
+        assert($handler instanceof ReceiveHandler);
 
-        // Delegate the responsibility to the handler.
+        // Delegate the responsibility to the handler
         return $handler->handle($postman);
     }
 }

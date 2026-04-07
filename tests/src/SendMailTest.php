@@ -12,10 +12,10 @@ declare(strict_types=1);
 
 namespace Derafu\TestsMail;
 
-use Derafu\Mail\Component\Exchange\Worker\Sender\Contract\SenderWorkerInterface;
+use Derafu\Mail\Component\Exchange\Contract\SenderWorkerInterface;
 use Derafu\Mail\Component\Exchange\Worker\Sender\Handler\SendHandler;
-use Derafu\Mail\Component\Exchange\Worker\Sender\SenderWorker;
 use Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\SmtpStrategy;
+use Derafu\Mail\Component\Exchange\Worker\SenderWorker;
 use Derafu\Mail\Model\Envelope;
 use Derafu\Mail\Model\Message;
 use Derafu\Mail\Model\Postman;
