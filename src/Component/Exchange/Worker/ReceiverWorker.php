@@ -17,7 +17,7 @@ use Derafu\Backbone\Attribute\Worker;
 use Derafu\Backbone\Contract\HandlerInterface;
 use Derafu\Mail\Component\Exchange\Contract\ReceiverWorkerInterface;
 use Derafu\Mail\Component\Exchange\Worker\Receiver\Handler\ReceiveHandler;
-use Derafu\Mail\Model\Contract\PostmanInterface;
+use Derafu\Mail\Contract\PostmanInterface;
 
 /**
  * Worker for receiving emails.

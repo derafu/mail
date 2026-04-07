@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Derafu\Mail\Model;
 
-use Derafu\Mail\Model\Contract\EnvelopeInterface;
-use Derafu\Mail\Model\Contract\MessageInterface;
+use Derafu\Mail\Contract\EnvelopeInterface;
+use Derafu\Mail\Contract\MessageInterface;
 use Symfony\Component\Mailer\Envelope as SymfonyEnvelope;
 use Symfony\Component\Mime\Email as SymfonyEmail;
 

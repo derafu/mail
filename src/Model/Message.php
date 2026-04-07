@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Derafu\Mail\Model;
 
-use Derafu\Mail\Model\Contract\MessageInterface;
+use Derafu\Mail\Contract\MessageInterface;
 use Symfony\Component\Mime\Email as SymfonyEmail;
 use Throwable;
 

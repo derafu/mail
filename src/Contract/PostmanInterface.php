@@ -10,7 +10,7 @@ declare(strict_types=1);
  * See LICENSE file for more details.
  */
 
-namespace Derafu\Mail\Model\Contract;
+namespace Derafu\Mail\Contract;
 
 use Derafu\Config\Contract\OptionsAwareInterface;
 

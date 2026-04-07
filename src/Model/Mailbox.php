@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Derafu\Mail\Model;
 
-use Derafu\Mail\Model\Contract\MailboxInterface;
+use Derafu\Mail\Contract\MailboxInterface;
 use PhpImap\IncomingMail;
 use PhpImap\Mailbox as PhpImapMailbox;
 use stdClass;

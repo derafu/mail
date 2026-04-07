@@ -10,11 +10,11 @@ declare(strict_types=1);
  * See LICENSE file for more details.
  */
 
-namespace Derafu\Mail\Model\Factory;
+namespace Derafu\Mail\Factory;
 
 use DateTimeImmutable;
-use Derafu\Mail\Model\Contract\EnvelopeInterface;
-use Derafu\Mail\Model\Contract\MessageInterface;
+use Derafu\Mail\Contract\EnvelopeInterface;
+use Derafu\Mail\Contract\MessageInterface;
 use Derafu\Mail\Model\Envelope;
 use Derafu\Mail\Model\Message;
 use PhpImap\IncomingMail;

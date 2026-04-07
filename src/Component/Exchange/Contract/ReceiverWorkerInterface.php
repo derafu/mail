@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace Derafu\Mail\Component\Exchange\Contract;
 
 use Derafu\Backbone\Contract\WorkerInterface;
-use Derafu\Mail\Model\Contract\EnvelopeInterface;
-use Derafu\Mail\Model\Contract\PostmanInterface;
+use Derafu\Mail\Contract\EnvelopeInterface;
+use Derafu\Mail\Contract\PostmanInterface;
 
 /**
  * Interface for the worker "mail.exchange.receiver".

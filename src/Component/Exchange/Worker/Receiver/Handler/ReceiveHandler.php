@@ -15,8 +15,8 @@ namespace Derafu\Mail\Component\Exchange\Worker\Receiver\Handler;
 use Derafu\Backbone\Abstract\AbstractHandler;
 use Derafu\Backbone\Attribute\Handler;
 use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Contract\ReceiverStrategyInterface;
+use Derafu\Mail\Contract\PostmanInterface;
 use Derafu\Mail\Exception\MailException;
-use Derafu\Mail\Model\Contract\PostmanInterface;
 use Throwable;
 
 /**

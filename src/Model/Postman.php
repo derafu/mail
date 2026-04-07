@@ -14,8 +14,8 @@ namespace Derafu\Mail\Model;
 
 use Derafu\Config\Contract\OptionsInterface;
 use Derafu\Config\Trait\OptionsAwareTrait;
-use Derafu\Mail\Model\Contract\EnvelopeInterface;
-use Derafu\Mail\Model\Contract\PostmanInterface;
+use Derafu\Mail\Contract\EnvelopeInterface;
+use Derafu\Mail\Contract\PostmanInterface;
 
 /**
  * Class that represents an envelope with messages that will be sent by email.

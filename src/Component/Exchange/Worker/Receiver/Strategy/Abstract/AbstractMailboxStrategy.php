@@ -15,10 +15,10 @@ namespace Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Abstract;
 use Derafu\Backbone\Abstract\AbstractStrategy;
 use Derafu\Config\Contract\OptionsInterface;
 use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Contract\ReceiverStrategyInterface;
+use Derafu\Mail\Contract\MailboxInterface;
+use Derafu\Mail\Contract\PostmanInterface;
 use Derafu\Mail\Exception\MailException;
-use Derafu\Mail\Model\Contract\MailboxInterface;
-use Derafu\Mail\Model\Contract\PostmanInterface;
-use Derafu\Mail\Model\Factory\EnvelopeFactory;
+use Derafu\Mail\Factory\EnvelopeFactory;
 use Derafu\Mail\Model\Mailbox;
 use Exception;
 

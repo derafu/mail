@@ -1,0 +1,46 @@
+services:
+
+    # Default configuration for services.
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    # Derafu Mail Package "mail" (entry point for the library).
+    Derafu\Mail\Contract\MailPackageInterface:
+        class: Derafu\Mail\MailPackage
+
+    # Derafu Mail Component "mail.exchange".
+    Derafu\Mail\Component\Exchange\Contract\ExchangeComponentInterface:
+        class: Derafu\Mail\Component\Exchange\ExchangeComponent
+
+    # Derafu Mail Worker "mail.exchange.receiver".
+    Derafu\Mail\Component\Exchange\Contract\ReceiverWorkerInterface:
+        class: Derafu\Mail\Component\Exchange\Worker\ReceiverWorker
+        arguments:
+            $handlers: !tagged_iterator { tag: 'mail.exchange.receiver#handler', index_by: 'name' }
+
+    # Derafu Mail Worker "mail.exchange.sender".
+    Derafu\Mail\Component\Exchange\Contract\SenderWorkerInterface:
+        class: Derafu\Mail\Component\Exchange\Worker\SenderWorker
+        arguments:
+            $handlers: !tagged_iterator { tag: 'mail.exchange.sender#handler', index_by: 'name' }
+
+    # Handlers del worker "mail.exchange.receiver".
+    Derafu\Mail\Component\Exchange\Worker\Receiver\Handler\ReceiveHandler:
+        arguments:
+            $strategies: !tagged_iterator { tag: 'mail.exchange.receiver#strategy', index_by: 'name' }
+
+    # Handlers del worker "mail.exchange.sender".
+    Derafu\Mail\Component\Exchange\Worker\Sender\Handler\SendHandler:
+        arguments:
+            $strategies: !tagged_iterator { tag: 'mail.exchange.sender#strategy', index_by: 'name' }
+
+    # Estrategias del worker "mail.exchange.receiver".
+    Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\ImapStrategy: ~
+
+    # Estrategias del worker "mail.exchange.sender".
+    Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\SmtpStrategy: ~
+
+    # Servicios del componente "mail.exchange".
+    Derafu\Mail\Factory\EnvelopeFactory: ~
