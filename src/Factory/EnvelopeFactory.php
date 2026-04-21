@@ -17,45 +17,53 @@ use Derafu\Mail\Contract\EnvelopeInterface;
 use Derafu\Mail\Contract\MessageInterface;
 use Derafu\Mail\Model\Envelope;
 use Derafu\Mail\Model\Message;
-use PhpImap\IncomingMail;
-use PhpImap\IncomingMailAttachment;
 use Symfony\Component\Mime\Address;
+use Webklex\PHPIMAP\Address as ImapAddress;
+use Webklex\PHPIMAP\Attachment;
+use Webklex\PHPIMAP\Message as ImapMessage;
 
 /**
- * Factory to create an Envelope object from an IncomingMail instance.
+ * Factory to create an Envelope object from an incoming IMAP message.
  */
 class EnvelopeFactory
 {
     /**
      * Creates an envelope from the data of an incoming email.
      *
-     * @param IncomingMail $mail
+     * @param ImapMessage $mail
      * @param array $attachmentFilters
      * @return EnvelopeInterface
      */
     public function createFromIncomingMail(
-        IncomingMail $mail,
+        ImapMessage $mail,
         array $attachmentFilters = []
     ): EnvelopeInterface {
-        // Determine who sent the email.
-        if (!empty($mail->senderAddress)) {
-            $senderAddress = $mail->senderAddress;
-            $senderName = $mail->senderName ?? '';
-        } else {
-            $senderAddress = $mail->fromAddress;
-            $senderName = $mail->fromName ?? '';
+        // Determine who sent the email (Sender header takes precedence over From).
+        $senderAttr = $mail->getSender();
+        $fromAttr = $mail->getFrom();
+
+        $senderImapAddress = null;
+        if ($senderAttr !== null && $senderAttr->count() > 0) {
+            $senderImapAddress = $senderAttr->first();
+        } elseif ($fromAttr !== null && $fromAttr->count() > 0) {
+            $senderImapAddress = $fromAttr->first();
         }
 
+        $senderAddress = $senderImapAddress?->mail ?? '';
+        $senderName = $senderImapAddress?->personal ?? '';
+
         // Create the complete list of email recipients.
-        $recipients = array_merge($mail->to, $mail->cc, $mail->bcc);
+        $toAddresses = $mail->getTo()->all();
+        $ccAddresses = $mail->getCc()->all();
+        $bccAddresses = $mail->getBcc()->all();
+        $allRecipients = array_merge($toAddresses, $ccAddresses, $bccAddresses);
 
         // Create the envelope.
         $envelope = new Envelope(
             new Address($senderAddress, $senderName),
             array_map(
-                fn ($email, $name) => new Address($email, $name ?? ''),
-                array_keys($recipients),
-                $recipients
+                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
+                $allRecipients
             )
         );
 
@@ -70,66 +78,76 @@ class EnvelopeFactory
     /**
      * Creates the message from the data of an incoming email.
      *
-     * @param IncomingMail $mail
+     * @param ImapMessage $mail
      * @param array $attachmentFilters
      * @return MessageInterface
      */
     private function createMessage(
-        IncomingMail $mail,
+        ImapMessage $mail,
         array $attachmentFilters = []
     ): MessageInterface {
-        // Create the message.
         $message = new Message();
 
-        // Add the message ID (in the context of the transport).
-        $message->id($mail->id);
+        // Add the message ID (the IMAP UID).
+        $message->id($mail->getSequenceId());
 
         // Add the message date.
-        $message->date(new DateTimeImmutable($mail->date));
+        $dateAttr = $mail->getDate();
+        if ($dateAttr !== null && $dateAttr->count() > 0) {
+            $message->date(DateTimeImmutable::createFromInterface($dateAttr->first()));
+        }
 
         // Add the sender.
-        $message->from(new Address($mail->fromAddress, $mail->fromName ?? ''));
+        $fromAttr = $mail->getFrom();
+        if ($fromAttr !== null && $fromAttr->count() > 0) {
+            $fromAddr = $fromAttr->first();
+            $message->from(new Address($fromAddr->mail ?? '', $fromAddr->personal ?? ''));
+        }
 
         // Add the main recipients (TO).
-        if (!empty($mail->to)) {
+        $toAttr = $mail->getTo();
+        if ($toAttr !== null && $toAttr->count() > 0) {
             $message->to(...array_map(
-                fn ($email, $name) => new Address($email, $name ?? ''),
-                array_keys($mail->to),
-                $mail->to
+                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
+                $toAttr->all()
             ));
         }
 
         // Add the copy recipients (CC).
-        if (!empty($mail->cc)) {
+        $ccAttr = $mail->getCc();
+        if ($ccAttr !== null && $ccAttr->count() > 0) {
             $message->cc(...array_map(
-                fn ($email, $name) => new Address($email, $name ?? ''),
-                array_keys($mail->cc),
-                $mail->cc
+                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
+                $ccAttr->all()
             ));
         }
 
         // Add the hidden recipients (BCC).
-        if (!empty($mail->bcc)) {
+        $bccAttr = $mail->getBcc();
+        if ($bccAttr !== null && $bccAttr->count() > 0) {
             $message->bcc(...array_map(
-                fn ($email, $name) => new Address($email, $name ?? ''),
-                array_keys($mail->bcc),
-                $mail->bcc
+                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
+                $bccAttr->all()
             ));
         }
 
         // Add the subject.
-        if (!empty($mail->subject)) {
-            $message->subject($mail->subject);
+        $subjectAttr = $mail->getSubject();
+        if ($subjectAttr !== null && $subjectAttr->count() > 0) {
+            $subject = $subjectAttr->first();
+            if (!empty($subject)) {
+                $message->subject($subject);
+            }
         }
 
         // Add the message body as plain text.
-        if (!empty($mail->textPlain)) {
-            $message->text($mail->textPlain);
+        if ($mail->hasTextBody()) {
+            $message->text($mail->getTextBody());
         }
 
         // Add the message body as HTML.
-        if (!empty($mail->textHtml)) {
-            $message->html($mail->textHtml);
+        if ($mail->hasHTMLBody()) {
+            $message->html($mail->getHTMLBody());
         }
 
         // Add the attachments if they exist.
@@ -139,32 +157,31 @@ class EnvelopeFactory
                 || $this->attachmentPassFilters($attachment, $attachmentFilters)
             ) {
                 $message->attach(
-                    $attachment->getContents(),
+                    $attachment->content,
                     $attachment->name,
-                    $attachment->mimeType
+                    $attachment->content_type
                 );
             }
         }
 
-        // Return the email message.
         return $message;
     }
 
     /**
-     * Applies the filters to a part of the message.
+     * Applies the filters to an attachment.
      *
-     * @param IncomingMailAttachment $attachment Part of the message to filter.
-     * @param array $filters Filters to use.
-     * @return bool `true` if the part of the message passes the filters, `false`
-     * otherwise.
+     * @param Attachment $attachment
+     * @param array $filters
+     * @return bool `true` if the attachment passes the filters, `false` otherwise.
      */
     private function attachmentPassFilters(
-        IncomingMailAttachment $attachment,
+        Attachment $attachment,
         array $filters
     ): bool {
-        // Filter by: subtype.
+        // Filter by: subtype (derived from the second segment of the MIME type).
         if (!empty($filters['subtype'])) {
-            $subtype = strtoupper($attachment->subtype);
+            $contentType = $attachment->content_type ?? '';
+            $subtype = strtoupper(explode('/', $contentType)[1] ?? '');
             $subtypes = array_map('strtoupper', $filters['subtype']);
             if (!in_array($subtype, $subtypes)) {
                 return false;
@@ -174,7 +191,7 @@ class EnvelopeFactory
         // Filter by: extension.
         if (!empty($filters['extension'])) {
             $extension = strtolower(pathinfo(
-                $attachment->name,
+                $attachment->name ?? '',
                 PATHINFO_EXTENSION
             ));
             $extensions = array_map('strtolower', $filters['extension']);
@@ -183,7 +200,6 @@ class EnvelopeFactory
             }
         }
 
-        // Passed the filters ok.
         return true;
     }
 }

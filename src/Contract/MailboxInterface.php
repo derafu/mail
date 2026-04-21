@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Derafu\Mail\Contract;
 
-use PhpImap\IncomingMail;
-use PhpImap\Mailbox as PhpImapMailbox;
 use stdClass;
+use Webklex\PHPIMAP\Client;
+use Webklex\PHPIMAP\Message;
 
 /**
  * Interface for the email mailbox.
@@ -49,13 +49,11 @@ interface MailboxInterface
     // -------------------------------------------------------------------------
 
     /**
-     * Gets the mailbox from the PhpImap library.
+     * Gets the underlying IMAP client.
      *
-     * @return PhpImapMailbox
-     *
-     * @see https://github.com/barbushin/php-imap
+     * @return Client
      */
-    public function getMailbox(): PhpImapMailbox;
+    public function getMailbox(): Client;
 
     /**
      * Searches the mails in the email mailbox.
@@ -74,9 +72,9 @@ interface MailboxInterface
      *
      * @param int $mailId ID of the mail to get.
      * @param bool $markAsSeen Whether to mark the mail as seen.
-     * @return IncomingMail Mail.
+     * @return Message Mail.
      */
-    public function getMail(int $mailId, bool $markAsSeen = true): IncomingMail;
+    public function getMail(int $mailId, bool $markAsSeen = true): Message;
 
     /**
      * Marks the mails as read.

@@ -26,21 +26,21 @@ services:
         arguments:
             $handlers: !tagged_iterator { tag: 'mail.exchange.sender#handler', index_by: 'name' }
 
-    # Handlers del worker "mail.exchange.receiver".
+    # Handlers of the worker "mail.exchange.receiver".
     Derafu\Mail\Component\Exchange\Worker\Receiver\Handler\ReceiveHandler:
         arguments:
             $strategies: !tagged_iterator { tag: 'mail.exchange.receiver#strategy', index_by: 'name' }
 
-    # Handlers del worker "mail.exchange.sender".
+    # Handlers of the worker "mail.exchange.sender".
     Derafu\Mail\Component\Exchange\Worker\Sender\Handler\SendHandler:
         arguments:
             $strategies: !tagged_iterator { tag: 'mail.exchange.sender#strategy', index_by: 'name' }
 
-    # Estrategias del worker "mail.exchange.receiver".
+    # Strategies of the worker "mail.exchange.receiver".
     Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\ImapStrategy: ~
 
-    # Estrategias del worker "mail.exchange.sender".
+    # Strategies of the worker "mail.exchange.sender".
     Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\SmtpStrategy: ~
 
-    # Servicios del componente "mail.exchange".
+    # Services of the component "mail.exchange".
     Derafu\Mail\Factory\EnvelopeFactory: ~
