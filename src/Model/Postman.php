@@ -32,13 +32,6 @@ class Postman implements PostmanInterface
     private array $envelopes = [];
 
     /**
-     * Schema of the postman options.
-     *
-     * @var array
-     */
-    protected array $optionsSchema = [];
-
-    /**
      * Constructor of the postman.
      *
      * @param array|OptionsInterface $options

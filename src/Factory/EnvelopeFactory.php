@@ -18,6 +18,7 @@ use Derafu\Mail\Contract\MessageInterface;
 use Derafu\Mail\Model\Envelope;
 use Derafu\Mail\Model\Message;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
 use Webklex\PHPIMAP\Address as ImapAddress;
 use Webklex\PHPIMAP\Attachment;
 use Webklex\PHPIMAP\Message as ImapMessage;
@@ -27,6 +28,21 @@ use Webklex\PHPIMAP\Message as ImapMessage;
  */
 class EnvelopeFactory
 {
+    /**
+     * Sender of the envelope of a mail that has no valid sender.
+     *
+     * The domain `.invalid` is reserved (RFC 2606) and never exists, so it can
+     * not be confused with a real address.
+     */
+    public const UNKNOWN_SENDER = 'unknown@invalid';
+
+    /**
+     * Recipient of the envelope of a mail that has no valid recipient (for
+     * example, the one that has `undisclosed-recipients:;` or only hidden
+     * copies).
+     */
+    public const UNDISCLOSED_RECIPIENTS = 'undisclosed-recipients@invalid';
+
     /**
      * Creates an envelope from the data of an incoming email.
      *
@@ -42,15 +58,14 @@ class EnvelopeFactory
         $senderAttr = $mail->getSender();
         $fromAttr = $mail->getFrom();
 
-        $senderImapAddress = null;
-        if ($senderAttr !== null && $senderAttr->count() > 0) {
-            $senderImapAddress = $senderAttr->first();
-        } elseif ($fromAttr !== null && $fromAttr->count() > 0) {
-            $senderImapAddress = $fromAttr->first();
+        $sender = null;
+        $senderSource = $senderAttr->count() > 0 ? $senderAttr : $fromAttr;
+        if ($senderSource->count() > 0) {
+            $sender = $this->createAddress($senderSource->first());
         }
 
-        $senderAddress = $senderImapAddress?->mail ?? '';
-        $senderName = $senderImapAddress?->personal ?? '';
+        // An incoming mail can lack a valid sender, but the envelope needs one.
+        $sender ??= new Address(self::UNKNOWN_SENDER);
 
         // Create the complete list of email recipients.
         $toAddresses = $mail->getTo()->all();
@@ -58,14 +73,14 @@ class EnvelopeFactory
         $bccAddresses = $mail->getBcc()->all();
         $allRecipients = array_merge($toAddresses, $ccAddresses, $bccAddresses);
 
+        // The envelope needs at least one recipient, but an incoming mail can
+        // lack valid ones (`undisclosed-recipients:;`, or only hidden copies).
+        $recipients = $this->createAddresses($allRecipients)
+            ?: [new Address(self::UNDISCLOSED_RECIPIENTS)]
+        ;
+
         // Create the envelope.
-        $envelope = new Envelope(
-            new Address($senderAddress, $senderName),
-            array_map(
-                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
-                $allRecipients
-            )
-        );
+        $envelope = new Envelope($sender, $recipients);
 
         // Create the message and add it to the envelope.
         $message = $this->createMessage($mail, $attachmentFilters);
@@ -93,47 +108,49 @@ class EnvelopeFactory
 
         // Add the message date.
         $dateAttr = $mail->getDate();
-        if ($dateAttr !== null && $dateAttr->count() > 0) {
+        if ($dateAttr->count() > 0) {
             $message->date(DateTimeImmutable::createFromInterface($dateAttr->first()));
         }
 
         // Add the sender.
         $fromAttr = $mail->getFrom();
-        if ($fromAttr !== null && $fromAttr->count() > 0) {
-            $fromAddr = $fromAttr->first();
-            $message->from(new Address($fromAddr->mail ?? '', $fromAddr->personal ?? ''));
+        if ($fromAttr->count() > 0) {
+            $from = $this->createAddress($fromAttr->first());
+            if ($from !== null) {
+                $message->from($from);
+            }
         }
 
         // Add the main recipients (TO).
         $toAttr = $mail->getTo();
-        if ($toAttr !== null && $toAttr->count() > 0) {
-            $message->to(...array_map(
-                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
-                $toAttr->all()
-            ));
+        if ($toAttr->count() > 0) {
+            $addresses = $this->createAddresses($toAttr->all());
+            if ($addresses) {
+                $message->to(...$addresses);
+            }
         }
 
         // Add the copy recipients (CC).
         $ccAttr = $mail->getCc();
-        if ($ccAttr !== null && $ccAttr->count() > 0) {
-            $message->cc(...array_map(
-                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
-                $ccAttr->all()
-            ));
+        if ($ccAttr->count() > 0) {
+            $addresses = $this->createAddresses($ccAttr->all());
+            if ($addresses) {
+                $message->cc(...$addresses);
+            }
         }
 
         // Add the hidden recipients (BCC).
         $bccAttr = $mail->getBcc();
-        if ($bccAttr !== null && $bccAttr->count() > 0) {
-            $message->bcc(...array_map(
-                fn (ImapAddress $addr) => new Address($addr->mail ?? '', $addr->personal ?? ''),
-                $bccAttr->all()
-            ));
+        if ($bccAttr->count() > 0) {
+            $addresses = $this->createAddresses($bccAttr->all());
+            if ($addresses) {
+                $message->bcc(...$addresses);
+            }
         }
 
         // Add the subject.
         $subjectAttr = $mail->getSubject();
-        if ($subjectAttr !== null && $subjectAttr->count() > 0) {
+        if ($subjectAttr->count() > 0) {
             $subject = $subjectAttr->first();
             if (!empty($subject)) {
                 $message->subject($subject);
@@ -165,6 +182,37 @@ class EnvelopeFactory
         }
 
         return $message;
+    }
+
+    /**
+     * Creates an address from an address of an incoming mail.
+     *
+     * @param ImapAddress $address
+     * @return Address|null `null` if it is not a valid address (for example
+     * the `undisclosed-recipients` group, which has no host).
+     */
+    private function createAddress(ImapAddress $address): ?Address
+    {
+        try {
+            return new Address($address->mail, $address->personal);
+        } catch (RfcComplianceException) {
+            return null;
+        }
+    }
+
+    /**
+     * Creates the addresses from the ones of an incoming mail, without the
+     * ones that are not valid.
+     *
+     * @param ImapAddress[] $addresses
+     * @return Address[]
+     */
+    private function createAddresses(array $addresses): array
+    {
+        return array_values(array_filter(array_map(
+            $this->createAddress(...),
+            $addresses
+        )));
     }
 
     /**

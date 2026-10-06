@@ -52,6 +52,14 @@ class ReceiveHandler extends AbstractHandler
     ];
 
     /**
+     * {@inheritDoc}
+     */
+    public function getOptionsSchema(): array
+    {
+        return $this->optionsSchema;
+    }
+
+    /**
      * Handles the email receiving process.
      *
      * @param PostmanInterface $postman The postman with mailbox information.
@@ -69,7 +77,7 @@ class ReceiveHandler extends AbstractHandler
             $envelopes = $strategy->receive($postman);
         } catch (Throwable $e) {
             throw new MailException(
-                message: $e->getMessage(),
+                message: ['{message}', 'message' => $e->getMessage()],
                 previous: $e
             );
         }

@@ -69,7 +69,6 @@ class ReceiveMailTest extends TestCase
 
         $envelopes = $this->receiverWorker->receive($postman);
 
-        $this->assertIsArray($envelopes);
         $this->assertNotEmpty($envelopes);
     }
 }

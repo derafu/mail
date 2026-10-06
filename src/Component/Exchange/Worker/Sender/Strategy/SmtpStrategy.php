@@ -73,6 +73,14 @@ class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInter
     /**
      * {@inheritDoc}
      */
+    public function getOptionsSchema(): array
+    {
+        return $this->optionsSchema;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     protected function resolveDsn(OptionsInterface $options): string
     {
         $transportOptions = $options->get('transport');

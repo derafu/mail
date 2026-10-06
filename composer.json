@@ -26,15 +26,20 @@
     },
     "require": {
         "php": "^8.5",
-        "derafu/backbone": "dev-main"
+        "derafu/backbone": "dev-main",
+        "derafu/translation": "dev-main"
     },
     "require-dev": {
         "ext-xdebug": "*",
-        "friendsofphp/php-cs-fixer": "^3.94",
-        "phpstan/phpstan": "^1.12",
-        "phpunit/phpunit": "^11.5",
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^13.4",
         "symfony/mailer": "^8.0",
-        "webklex/php-imap": "^6.2"
+        "webklex/php-imap": "^6.2",
+        "nikic/php-parser": "^5.9"
+    },
+    "suggest": {
+        "nikic/php-parser": "Required by the tests of the messages of the package (Derafu\\Translation\\Lint reads the code)."
     },
     "scripts": {
         "docs": "php tools/phpdocumentor run --config=phpdoc.xml",

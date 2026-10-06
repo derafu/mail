@@ -1,0 +1,27 @@
+From: ana@example.com
+To: beto@example.com
+Subject: Three attachments
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="B"
+
+--B
+Content-Type: text/plain; charset=utf-8
+
+Body
+--B
+Content-Type: application/xml; name="dte.xml"
+Content-Disposition: attachment; filename="dte.xml"
+
+<dte/>
+--B
+Content-Type: application/pdf; name="BOLETA.PDF"
+Content-Disposition: attachment; filename="BOLETA.PDF"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQgZmFrZQ==
+--B
+Content-Type: text/plain; name="notes.txt"
+Content-Disposition: attachment; filename="notes.txt"
+
+notes
+--B--

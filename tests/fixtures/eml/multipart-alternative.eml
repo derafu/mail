@@ -1,0 +1,15 @@
+From: ana@example.com
+To: beto@example.com
+Subject: Text and HTML
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="A"
+
+--A
+Content-Type: text/plain; charset=utf-8
+
+Plain body
+--A
+Content-Type: text/html; charset=utf-8
+
+<p>HTML body</p>
+--A--

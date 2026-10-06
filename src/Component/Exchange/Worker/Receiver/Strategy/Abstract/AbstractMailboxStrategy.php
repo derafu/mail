@@ -72,10 +72,10 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
             }
         } catch (Exception $e) {
             throw new MailException(
-                message: sprintf(
-                    'An error occurred while receiving the emails: %s',
-                    $e->getMessage()
-                ),
+                message: [
+                    'An error occurred while receiving the emails: {error}',
+                    'error' => $e->getMessage(),
+                ],
                 previous: $e
             );
         }

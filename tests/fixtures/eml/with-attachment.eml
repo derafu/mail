@@ -1,0 +1,16 @@
+From: ana@example.com
+To: beto@example.com
+Subject: With attachment
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="B"
+
+--B
+Content-Type: text/plain; charset=utf-8
+
+Body
+--B
+Content-Type: application/xml; name="dte.xml"
+Content-Disposition: attachment; filename="dte.xml"
+
+<dte/>
+--B--
