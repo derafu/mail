@@ -11,6 +11,45 @@ services:
         autoconfigure: true
         public: false
 
+    # Derafu Mail Package "mail" (entry point for the library).
+    Derafu\Mail\Contract\MailPackageInterface:
+        class: Derafu\Mail\MailPackage
+
+    # Derafu Mail Component "mail.exchange".
+    Derafu\Mail\Component\Exchange\Contract\ExchangeComponentInterface:
+        class: Derafu\Mail\Component\Exchange\ExchangeComponent
+
+    # Derafu Mail Worker "mail.exchange.receiver".
+    Derafu\Mail\Component\Exchange\Contract\ReceiverWorkerInterface:
+        class: Derafu\Mail\Component\Exchange\Worker\ReceiverWorker
+        arguments:
+            $handlers: !tagged_iterator { tag: 'mail.exchange.receiver#handler', index_by: 'name' }
+
+    # Derafu Mail Worker "mail.exchange.sender".
+    Derafu\Mail\Component\Exchange\Contract\SenderWorkerInterface:
+        class: Derafu\Mail\Component\Exchange\Worker\SenderWorker
+        arguments:
+            $handlers: !tagged_iterator { tag: 'mail.exchange.sender#handler', index_by: 'name' }
+
+    # Handlers of the worker "mail.exchange.receiver".
+    Derafu\Mail\Component\Exchange\Worker\Receiver\Handler\ReceiveHandler:
+        arguments:
+            $strategies: !tagged_iterator { tag: 'mail.exchange.receiver#strategy', index_by: 'name' }
+
+    # Handlers of the worker "mail.exchange.sender".
+    Derafu\Mail\Component\Exchange\Worker\Sender\Handler\SendHandler:
+        arguments:
+            $strategies: !tagged_iterator { tag: 'mail.exchange.sender#strategy', index_by: 'name' }
+
+    # Strategies of the worker "mail.exchange.receiver".
+    Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\ImapStrategy: ~
+
+    # Strategies of the worker "mail.exchange.sender".
+    Derafu\Mail\Component\Exchange\Worker\Sender\Strategy\SmtpStrategy: ~
+
+    # Services of the component "mail.exchange".
+    Derafu\Mail\Factory\EnvelopeFactory: ~
+
     # Feeds resources/translations into the consuming app's Translator (the
     # app must pass $resourceProviders: !tagged_iterator
     # derafu_translation.resource_provider to TranslatorFactory::create(),
