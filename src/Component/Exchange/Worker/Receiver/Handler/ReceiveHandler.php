@@ -15,6 +15,7 @@ namespace Derafu\Mail\Component\Exchange\Worker\Receiver\Handler;
 use Derafu\Backbone\Abstract\AbstractHandler;
 use Derafu\Backbone\Attribute\Handler;
 use Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Contract\ReceiverStrategyInterface;
+use Derafu\Mail\Contract\EnvelopeInterface;
 use Derafu\Mail\Contract\PostmanInterface;
 use Derafu\Mail\Exception\MailException;
 use Throwable;
@@ -28,7 +29,7 @@ class ReceiveHandler extends AbstractHandler
     /**
      * Constructor of the handler with its dependencies.
      *
-     * @param array|iterable<ReceiverStrategyInterface> $strategies
+     * @param iterable<array-key,ReceiverStrategyInterface> $strategies
      */
     public function __construct(iterable $strategies)
     {
@@ -38,7 +39,7 @@ class ReceiveHandler extends AbstractHandler
     /**
      * Schema of the options.
      *
-     * @var array<string,array|bool>
+     * @var array<string,array<string,mixed>>
      */
     protected array $optionsSchema = [
         'strategy' => [
@@ -63,13 +64,13 @@ class ReceiveHandler extends AbstractHandler
      * Handles the email receiving process.
      *
      * @param PostmanInterface $postman The postman with mailbox information.
-     * @return array The received envelopes.
+     * @return array<int,EnvelopeInterface> The received envelopes.
      * @throws MailException If an error occurs during reception.
      */
     public function handle(PostmanInterface $postman): array
     {
         $options = $this->resolveOptions($postman->getOptions());
-        $strategy = $this->getStrategy($options->get('strategy'));
+        $strategy = $this->getStrategy($options->requireString('strategy'));
 
         assert($strategy instanceof ReceiverStrategyInterface);
 

@@ -26,7 +26,7 @@ class ImapStrategy extends AbstractMailboxStrategy implements ReceiverStrategyIn
     /**
      * Schema of the options.
      *
-     * @var array<string,array>
+     * @var array<string,array<string,mixed>>
      */
     protected array $optionsSchema = [
         'strategy' => [
@@ -87,7 +87,16 @@ class ImapStrategy extends AbstractMailboxStrategy implements ReceiverStrategyIn
                         ],
                         'attachmentFilters' => [
                             'types' => 'array',
-                            'default' => [],
+                            'schema' => [
+                                'subtype' => [
+                                    'types' => 'string[]',
+                                    'default' => [],
+                                ],
+                                'extension' => [
+                                    'types' => 'string[]',
+                                    'default' => [],
+                                ],
+                            ],
                         ],
                     ],
                 ],
@@ -108,24 +117,20 @@ class ImapStrategy extends AbstractMailboxStrategy implements ReceiverStrategyIn
      */
     protected function resolveDsn(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $transport = $options->requireContainer('transport');
 
-        if (!empty($transportOptions['dsn'])) {
-            return $transportOptions['dsn'];
+        $dsn = $transport->getString('dsn');
+        if (!empty($dsn)) {
+            return $dsn;
         }
 
         $dsn = sprintf(
             '{%s:%d/imap%s%s}%s',
-            $transportOptions['host'],
-            $transportOptions['port'],
-            $transportOptions['encryption'] === 'ssl' ? '/ssl' : '',
-            (
-                isset($transportOptions['verify_peer'])
-                && !$transportOptions['verify_peer']
-            )
-                ? '/novalidate-cert'
-                : '',
-            $transportOptions['mailbox']
+            $transport->requireString('host'),
+            $transport->requireInt('port'),
+            $transport->getString('encryption') === 'ssl' ? '/ssl' : '',
+            $transport->requireBool('verify_peer') ? '' : '/novalidate-cert',
+            $transport->requireString('mailbox')
         );
 
         $options->set('transport.dsn', $dsn);

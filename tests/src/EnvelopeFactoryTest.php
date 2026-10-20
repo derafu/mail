@@ -33,13 +33,14 @@ use Webklex\PHPIMAP\Message as ImapMessage;
 final class EnvelopeFactoryTest extends TestCase
 {
     /**
-     * @param array<string, string[]> $attachmentFilters
+     * @param array{subtype?: list<string>, extension?: list<string>} $attachmentFilters
      */
     private function envelopeFrom(string $name, array $attachmentFilters = []): Envelope
     {
-        $mail = ImapMessage::fromString(
-            file_get_contents(__DIR__ . '/../fixtures/eml/' . $name . '.eml')
-        );
+        $eml = file_get_contents(__DIR__ . '/../fixtures/eml/' . $name . '.eml');
+        $this->assertNotFalse($eml);
+
+        $mail = ImapMessage::fromString($eml);
         $mail->__set('msgn', 1);
         $mail->__set('uid', 1);
 
@@ -110,6 +111,37 @@ final class EnvelopeFactoryTest extends TestCase
         $attachments = $message->getAttachments();
         $this->assertCount(1, $attachments);
         $this->assertSame('dte.xml', $attachments[0]->getFilename());
+    }
+
+    #[Test]
+    public function keepsTheDateOfTheMail(): void
+    {
+        $date = $this->messageOf($this->envelopeFrom('dated'))->getDate();
+
+        $this->assertNotNull($date);
+        $this->assertSame('2026-04-06T10:00:00+00:00', $date->format('c'));
+    }
+
+    #[Test]
+    public function aMailWithoutDateHasNoDate(): void
+    {
+        $message = $this->messageOf($this->envelopeFrom('only-from'));
+
+        $this->assertNull($message->getDate());
+        $this->assertSame('Only From', $message->getSubject());
+    }
+
+    #[Test]
+    public function aSenderThatIsNotAValidAddressGetsTheUnknownSender(): void
+    {
+        $envelope = $this->envelopeFrom('sender-without-host');
+        $message = $this->messageOf($envelope);
+
+        $this->assertSame('unknown@invalid', $envelope->getSender()->getAddress());
+        // The invalid address is not used as the From of the message either.
+        $this->assertSame(['unknown@invalid'], array_map(fn ($from) => $from->getAddress(), $message->getFrom()));
+        $this->assertSame(['beto@example.com'], $this->addresses($envelope));
+        $this->assertSame('Sender without host', $message->getSubject());
     }
 
     #[Test]
@@ -188,7 +220,7 @@ final class EnvelopeFactoryTest extends TestCase
     }
 
     /**
-     * @return array<string, array{array<string, string[]>, string[]}>
+     * @return array<string, array{array{subtype?: list<string>, extension?: list<string>}, string[]}>
      */
     public static function attachmentFiltersProvider(): array
     {
@@ -205,7 +237,7 @@ final class EnvelopeFactoryTest extends TestCase
     }
 
     /**
-     * @param array<string, string[]> $filters
+     * @param array{subtype?: list<string>, extension?: list<string>} $filters
      * @param string[] $expected
      */
     #[Test]

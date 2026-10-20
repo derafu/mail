@@ -77,13 +77,13 @@ abstract class AbstractMailerStrategy extends AbstractStrategy implements Sender
      */
     protected function resolveDsn(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $dsn = $options->getString('transport.dsn');
 
-        if (empty($transportOptions['dsn'])) {
+        if (empty($dsn)) {
             throw new MailException('DSN is not defined for the Mailer.');
         }
 
-        return $transportOptions['dsn'];
+        return $dsn;
     }
 
     /**
@@ -94,10 +94,10 @@ abstract class AbstractMailerStrategy extends AbstractStrategy implements Sender
      */
     protected function resolveEndpoint(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $endpoint = $options->getString('transport.endpoint');
 
-        if (!empty($transportOptions['endpoint'])) {
-            return $transportOptions['endpoint'];
+        if (!empty($endpoint)) {
+            return $endpoint;
         }
 
         $endpoint = $this->resolveDsn($options);

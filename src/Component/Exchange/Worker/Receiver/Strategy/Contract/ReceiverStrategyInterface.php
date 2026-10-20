@@ -12,13 +12,14 @@ declare(strict_types=1);
 
 namespace Derafu\Mail\Component\Exchange\Worker\Receiver\Strategy\Contract;
 
+use Derafu\Backbone\Contract\StrategyInterface;
 use Derafu\Mail\Contract\EnvelopeInterface;
 use Derafu\Mail\Contract\PostmanInterface;
 
 /**
  * Interface for the strategies of the receiver service.
  */
-interface ReceiverStrategyInterface
+interface ReceiverStrategyInterface extends StrategyInterface
 {
     /**
      * Receives envelopes with messages from email using the transport options

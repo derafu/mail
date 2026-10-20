@@ -28,7 +28,7 @@ class SenderWorker extends AbstractWorker implements SenderWorkerInterface
     /**
      * Constructor of the worker with its dependencies.
      *
-     * @param array|iterable<HandlerInterface> $handlers
+     * @param iterable<array-key,HandlerInterface> $handlers
      */
     public function __construct(iterable $handlers)
     {

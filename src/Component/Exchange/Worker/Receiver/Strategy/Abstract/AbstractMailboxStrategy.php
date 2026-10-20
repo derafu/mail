@@ -45,9 +45,13 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
 
         $mailbox = $this->createMailbox($options);
 
-        $criteria = $options->get('transport.search.criteria');
-        $markAsSeen = $options->get('transport.search.markAsSeen');
-        $attachmentFilters = $options->get('transport.search.attachmentFilters')->all();
+        $criteria = $options->requireString('transport.search.criteria');
+        $markAsSeen = $options->requireBool('transport.search.markAsSeen');
+        $filters = $options->requireContainer('transport.search.attachmentFilters');
+        $attachmentFilters = [
+            'subtype' => $filters->requireList('subtype', of: 'string'),
+            'extension' => $filters->requireList('extension', of: 'string'),
+        ];
 
         try {
             // Obtener los ID de los correos según el criterio de búsqueda.
@@ -92,8 +96,8 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
     protected function createMailbox(OptionsInterface $options): MailboxInterface
     {
         $dsn = $this->resolveDsn($options);
-        $username = $options->get('transport.username');
-        $password = $options->get('transport.password');
+        $username = $options->requireString('transport.username');
+        $password = $options->requireString('transport.password');
 
         $mailbox = new Mailbox($dsn, $username, $password);
 
@@ -110,13 +114,13 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
      */
     protected function resolveDsn(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $dsn = $options->getString('transport.dsn');
 
-        if (empty($transportOptions['dsn'])) {
+        if (empty($dsn)) {
             throw new MailException('DSN is not defined for the Mailbox.');
         }
 
-        return $transportOptions['dsn'];
+        return $dsn;
     }
 
     /**
@@ -127,10 +131,10 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
      */
     protected function resolveEndpoint(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $endpoint = $options->getString('transport.endpoint');
 
-        if (!empty($transportOptions['endpoint'])) {
-            return $transportOptions['endpoint'];
+        if (!empty($endpoint)) {
+            return $endpoint;
         }
 
         $endpoint = $this->resolveDsn($options);

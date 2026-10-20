@@ -60,7 +60,7 @@ interface MailboxInterface
      *
      * @param string $criteria Criteria to search the mails.
      * @param bool $disableServerEncoding Whether to disable the server encoding.
-     * @return array Mails.
+     * @return array<int,int> Mails.
      */
     public function searchMailbox(
         string $criteria = 'ALL',
@@ -79,7 +79,7 @@ interface MailboxInterface
     /**
      * Marks the mails as read.
      *
-     * @param array $mailIds IDs of the mails to mark as read.
+     * @param array<int,int> $mailIds IDs of the mails to mark as read.
      */
     public function markMailsAsRead(array $mailIds): void;
 }

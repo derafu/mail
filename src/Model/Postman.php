@@ -34,7 +34,7 @@ class Postman implements PostmanInterface
     /**
      * Constructor of the postman.
      *
-     * @param array|OptionsInterface $options
+     * @param array<string,mixed>|OptionsInterface $options
      */
     public function __construct(array|OptionsInterface $options = [])
     {

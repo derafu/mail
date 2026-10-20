@@ -26,7 +26,7 @@ class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInter
     /**
      * Schema of the options.
      *
-     * @var array<string,array>
+     * @var array<string,array<string,mixed>>
      */
     protected array $optionsSchema = [
         'strategy' => [
@@ -83,20 +83,21 @@ class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInter
      */
     protected function resolveDsn(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $transport = $options->requireContainer('transport');
 
-        if (!empty($transportOptions['dsn'])) {
-            return $transportOptions['dsn'];
+        $dsn = $transport->getString('dsn');
+        if (!empty($dsn)) {
+            return $dsn;
         }
 
         $dsn = sprintf(
             'smtp://%s:%s@%s:%d?encryption=%s&verify_peer=%d',
-            $transportOptions['username'],
-            $transportOptions['password'],
-            $transportOptions['host'],
-            $transportOptions['port'],
-            (string) $transportOptions['encryption'],
-            (int) $transportOptions['verify_peer'],
+            $transport->requireString('username'),
+            $transport->requireString('password'),
+            $transport->requireString('host'),
+            $transport->requireInt('port'),
+            $transport->getString('encryption') ?? '',
+            $transport->requireBool('verify_peer') ? 1 : 0,
         );
 
         $options->set('transport.dsn', $dsn);
@@ -109,25 +110,28 @@ class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInter
      */
     protected function resolveEndpoint(OptionsInterface $options): string
     {
-        $transportOptions = $options->get('transport');
+        $transport = $options->requireContainer('transport');
 
-        if (!empty($transportOptions['endpoint'])) {
-            return $transportOptions['endpoint'];
+        $endpoint = $transport->getString('endpoint');
+        if (!empty($endpoint)) {
+            return $endpoint;
         }
 
         $endpoint = '';
 
-        if (isset($options['encryption'])) {
-            $endpoint .= $options['encryption'] . '://';
+        $encryption = $transport->getString('encryption');
+        if ($encryption !== null) {
+            $endpoint .= $encryption . '://';
         }
 
-        $endpoint .= $options['host'];
+        $endpoint .= $transport->requireString('host');
 
-        if (isset($options['port'])) {
-            $endpoint .= ':' . $options['port'];
+        $port = $transport->getInt('port');
+        if ($port !== null) {
+            $endpoint .= ':' . $port;
         }
 
-        if (isset($options['verify_peer']) && !$options['verify_peer']) {
+        if ($transport->getBool('verify_peer') === false) {
             $endpoint .= '/novalidate-cert';
         }
 

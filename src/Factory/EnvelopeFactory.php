@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Derafu\Mail\Factory;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use Derafu\Mail\Contract\EnvelopeInterface;
 use Derafu\Mail\Contract\MessageInterface;
 use Derafu\Mail\Model\Envelope;
@@ -21,6 +22,7 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Exception\RfcComplianceException;
 use Webklex\PHPIMAP\Address as ImapAddress;
 use Webklex\PHPIMAP\Attachment;
+use Webklex\PHPIMAP\Attribute as ImapAttribute;
 use Webklex\PHPIMAP\Message as ImapMessage;
 
 /**
@@ -47,7 +49,7 @@ class EnvelopeFactory
      * Creates an envelope from the data of an incoming email.
      *
      * @param ImapMessage $mail
-     * @param array $attachmentFilters
+     * @param array{subtype?: list<string>, extension?: list<string>} $attachmentFilters
      * @return EnvelopeInterface
      */
     public function createFromIncomingMail(
@@ -58,11 +60,8 @@ class EnvelopeFactory
         $senderAttr = $mail->getSender();
         $fromAttr = $mail->getFrom();
 
-        $sender = null;
         $senderSource = $senderAttr->count() > 0 ? $senderAttr : $fromAttr;
-        if ($senderSource->count() > 0) {
-            $sender = $this->createAddress($senderSource->first());
-        }
+        $sender = $this->firstAddress($senderSource);
 
         // An incoming mail can lack a valid sender, but the envelope needs one.
         $sender ??= new Address(self::UNKNOWN_SENDER);
@@ -94,7 +93,7 @@ class EnvelopeFactory
      * Creates the message from the data of an incoming email.
      *
      * @param ImapMessage $mail
-     * @param array $attachmentFilters
+     * @param array{subtype?: list<string>, extension?: list<string>} $attachmentFilters
      * @return MessageInterface
      */
     private function createMessage(
@@ -107,18 +106,15 @@ class EnvelopeFactory
         $message->id($mail->getSequenceId());
 
         // Add the message date.
-        $dateAttr = $mail->getDate();
-        if ($dateAttr->count() > 0) {
-            $message->date(DateTimeImmutable::createFromInterface($dateAttr->first()));
+        $date = $this->firstDate($mail->getDate());
+        if ($date !== null) {
+            $message->date($date);
         }
 
         // Add the sender.
-        $fromAttr = $mail->getFrom();
-        if ($fromAttr->count() > 0) {
-            $from = $this->createAddress($fromAttr->first());
-            if ($from !== null) {
-                $message->from($from);
-            }
+        $from = $this->firstAddress($mail->getFrom());
+        if ($from !== null) {
+            $message->from($from);
         }
 
         // Add the main recipients (TO).
@@ -149,12 +145,9 @@ class EnvelopeFactory
         }
 
         // Add the subject.
-        $subjectAttr = $mail->getSubject();
-        if ($subjectAttr->count() > 0) {
-            $subject = $subjectAttr->first();
-            if (!empty($subject)) {
-                $message->subject($subject);
-            }
+        $subject = $this->firstString($mail->getSubject());
+        if ($subject !== null) {
+            $message->subject($subject);
         }
 
         // Add the message body as plain text.
@@ -168,7 +161,7 @@ class EnvelopeFactory
         }
 
         // Add the attachments if they exist.
-        foreach ($mail->getAttachments() as $attachment) {
+        foreach ($this->attachments($mail) as $attachment) {
             if (
                 !$attachmentFilters
                 || $this->attachmentPassFilters($attachment, $attachmentFilters)
@@ -204,22 +197,83 @@ class EnvelopeFactory
      * Creates the addresses from the ones of an incoming mail, without the
      * ones that are not valid.
      *
-     * @param ImapAddress[] $addresses
+     * @param array<mixed> $addresses
      * @return Address[]
      */
     private function createAddresses(array $addresses): array
     {
         return array_values(array_filter(array_map(
-            $this->createAddress(...),
+            fn (mixed $address): ?Address => $address instanceof ImapAddress
+                ? $this->createAddress($address)
+                : null,
             $addresses
         )));
+    }
+
+    /**
+     * Creates the first address of a header of an incoming mail.
+     *
+     * @return Address|null `null` if the header has no address, or the first
+     * one is not valid.
+     */
+    private function firstAddress(ImapAttribute $attribute): ?Address
+    {
+        $address = $attribute->first();
+
+        return $address instanceof ImapAddress
+            ? $this->createAddress($address)
+            : null;
+    }
+
+    /**
+     * Returns the first date of a header of an incoming mail.
+     *
+     * @return DateTimeImmutable|null `null` if the header has no date.
+     */
+    private function firstDate(ImapAttribute $attribute): ?DateTimeImmutable
+    {
+        $date = $attribute->first();
+
+        return $date instanceof DateTimeInterface
+            ? DateTimeImmutable::createFromInterface($date)
+            : null;
+    }
+
+    /**
+     * Returns the first value of a header of an incoming mail, if it is a
+     * text that is not empty.
+     *
+     * @return string|null `null` if the header has no text.
+     */
+    private function firstString(ImapAttribute $attribute): ?string
+    {
+        $value = $attribute->first();
+
+        return is_string($value) && !empty($value) ? $value : null;
+    }
+
+    /**
+     * Returns the attachments of an incoming mail.
+     *
+     * @return list<Attachment>
+     */
+    private function attachments(ImapMessage $mail): array
+    {
+        $attachments = [];
+        foreach ($mail->getAttachments() as $attachment) {
+            if ($attachment instanceof Attachment) {
+                $attachments[] = $attachment;
+            }
+        }
+
+        return $attachments;
     }
 
     /**
      * Applies the filters to an attachment.
      *
      * @param Attachment $attachment
-     * @param array $filters
+     * @param array{subtype?: list<string>, extension?: list<string>} $filters
      * @return bool `true` if the attachment passes the filters, `false` otherwise.
      */
     private function attachmentPassFilters(
