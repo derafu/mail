@@ -45,12 +45,12 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
 
         $mailbox = $this->createMailbox($options);
 
-        $criteria = $options->requireString('transport.search.criteria');
-        $markAsSeen = $options->requireBool('transport.search.markAsSeen');
+        $criteria = $options->getReader()->requireString('transport.search.criteria');
+        $markAsSeen = $options->getReader()->requireBool('transport.search.markAsSeen');
         $filters = $options->requireContainer('transport.search.attachmentFilters');
         $attachmentFilters = [
-            'subtype' => $filters->requireList('subtype', of: 'string'),
-            'extension' => $filters->requireList('extension', of: 'string'),
+            'subtype' => $filters->getReader()->requireStringList('subtype'),
+            'extension' => $filters->getReader()->requireStringList('extension'),
         ];
 
         try {
@@ -96,8 +96,8 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
     protected function createMailbox(OptionsInterface $options): MailboxInterface
     {
         $dsn = $this->resolveDsn($options);
-        $username = $options->requireString('transport.username');
-        $password = $options->requireString('transport.password');
+        $username = $options->getReader()->requireString('transport.username');
+        $password = $options->getReader()->requireString('transport.password');
 
         $mailbox = new Mailbox($dsn, $username, $password);
 
@@ -114,7 +114,7 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
      */
     protected function resolveDsn(OptionsInterface $options): string
     {
-        $dsn = $options->getString('transport.dsn');
+        $dsn = $options->getReader()->getString('transport.dsn');
 
         if (empty($dsn)) {
             throw new MailException('DSN is not defined for the Mailbox.');
@@ -131,7 +131,7 @@ abstract class AbstractMailboxStrategy extends AbstractStrategy implements Recei
      */
     protected function resolveEndpoint(OptionsInterface $options): string
     {
-        $endpoint = $options->getString('transport.endpoint');
+        $endpoint = $options->getReader()->getString('transport.endpoint');
 
         if (!empty($endpoint)) {
             return $endpoint;

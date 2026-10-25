@@ -70,7 +70,7 @@ class ReceiveHandler extends AbstractHandler
     public function handle(PostmanInterface $postman): array
     {
         $options = $this->resolveOptions($postman->getOptions());
-        $strategy = $this->getStrategy($options->requireString('strategy'));
+        $strategy = $this->getStrategy($options->getReader()->requireString('strategy'));
 
         assert($strategy instanceof ReceiverStrategyInterface);
 

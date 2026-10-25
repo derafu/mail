@@ -119,18 +119,18 @@ class ImapStrategy extends AbstractMailboxStrategy implements ReceiverStrategyIn
     {
         $transport = $options->requireContainer('transport');
 
-        $dsn = $transport->getString('dsn');
+        $dsn = $transport->getReader()->getString('dsn');
         if (!empty($dsn)) {
             return $dsn;
         }
 
         $dsn = sprintf(
             '{%s:%d/imap%s%s}%s',
-            $transport->requireString('host'),
-            $transport->requireInt('port'),
-            $transport->getString('encryption') === 'ssl' ? '/ssl' : '',
-            $transport->requireBool('verify_peer') ? '' : '/novalidate-cert',
-            $transport->requireString('mailbox')
+            $transport->getReader()->requireString('host'),
+            $transport->getReader()->requireInt('port'),
+            $transport->getReader()->getString('encryption') === 'ssl' ? '/ssl' : '',
+            $transport->getReader()->requireBool('verify_peer') ? '' : '/novalidate-cert',
+            $transport->getReader()->requireString('mailbox')
         );
 
         $options->set('transport.dsn', $dsn);

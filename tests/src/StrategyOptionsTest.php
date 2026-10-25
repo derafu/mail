@@ -66,7 +66,7 @@ final class StrategyOptionsTest extends TestCase
         );
         $this->assertSame(
             'smtp://user:pass@smtp.gmail.com:465?encryption=ssl&verify_peer=1',
-            $options->getString('transport.dsn')
+            $options->getReader()->getString('transport.dsn')
         );
     }
 
@@ -100,7 +100,7 @@ final class StrategyOptionsTest extends TestCase
             'ssl://smtp.gmail.com:465',
             $this->call(new SmtpStrategy(), 'resolveEndpoint', $options)
         );
-        $this->assertSame('ssl://smtp.gmail.com:465', $options->getString('transport.endpoint'));
+        $this->assertSame('ssl://smtp.gmail.com:465', $options->getReader()->getString('transport.endpoint'));
     }
 
     public function testSmtpEndpointWithoutEncryptionAndWithoutPeerVerification(): void
@@ -133,7 +133,7 @@ final class StrategyOptionsTest extends TestCase
             '{imap.gmail.com:993/imap/ssl}INBOX',
             $this->call(new ImapStrategy(new EnvelopeFactory()), 'resolveDsn', $options)
         );
-        $this->assertSame('{imap.gmail.com:993/imap/ssl}INBOX', $options->getString('transport.dsn'));
+        $this->assertSame('{imap.gmail.com:993/imap/ssl}INBOX', $options->getReader()->getString('transport.dsn'));
     }
 
     public function testImapDsnWithoutEncryptionAndWithoutPeerVerification(): void
@@ -168,7 +168,7 @@ final class StrategyOptionsTest extends TestCase
             '{imap.gmail.com:993/imap/ssl}INBOX',
             $this->call(new ImapStrategy(new EnvelopeFactory()), 'resolveEndpoint', $options)
         );
-        $this->assertSame('{imap.gmail.com:993/imap/ssl}INBOX', $options->getString('transport.endpoint'));
+        $this->assertSame('{imap.gmail.com:993/imap/ssl}INBOX', $options->getReader()->getString('transport.endpoint'));
     }
 
     public function testImapKeepsTheEndpointThatWasGiven(): void
@@ -185,8 +185,8 @@ final class StrategyOptionsTest extends TestCase
     {
         $filters = $this->imapOptions()->requireContainer('transport.search.attachmentFilters');
 
-        $this->assertSame([], $filters->requireList('subtype', of: 'string'));
-        $this->assertSame([], $filters->requireList('extension', of: 'string'));
+        $this->assertSame([], $filters->getReader()->requireStringList('subtype'));
+        $this->assertSame([], $filters->getReader()->requireStringList('extension'));
     }
 
     public function testAttachmentFiltersAreLists(): void
@@ -195,8 +195,8 @@ final class StrategyOptionsTest extends TestCase
             'search' => ['attachmentFilters' => ['subtype' => ['xml'], 'extension' => ['pdf', 'xml']]],
         ])->requireContainer('transport.search.attachmentFilters');
 
-        $this->assertSame(['xml'], $filters->requireList('subtype', of: 'string'));
-        $this->assertSame(['pdf', 'xml'], $filters->requireList('extension', of: 'string'));
+        $this->assertSame(['xml'], $filters->getReader()->requireStringList('subtype'));
+        $this->assertSame(['pdf', 'xml'], $filters->getReader()->requireStringList('extension'));
     }
 
     public function testAttachmentFiltersRejectElementsThatAreNotStrings(): void
@@ -220,7 +220,7 @@ final class StrategyOptionsTest extends TestCase
         $this->assertSame('smtp://one:1', $this->call($strategy, 'resolveDsn', $options));
         // Without an endpoint, the endpoint is the DSN, and it is kept.
         $this->assertSame('smtp://one:1', $this->call($strategy, 'resolveEndpoint', $options));
-        $this->assertSame('smtp://one:1', $options->getString('transport.endpoint'));
+        $this->assertSame('smtp://one:1', $options->getReader()->getString('transport.endpoint'));
 
         $options = $strategy->resolveOptions(['transport' => ['dsn' => 'smtp://one:1', 'endpoint' => 'custom']]);
         $this->assertSame('custom', $this->call($strategy, 'resolveEndpoint', $options));

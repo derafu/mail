@@ -85,19 +85,19 @@ class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInter
     {
         $transport = $options->requireContainer('transport');
 
-        $dsn = $transport->getString('dsn');
+        $dsn = $transport->getReader()->getString('dsn');
         if (!empty($dsn)) {
             return $dsn;
         }
 
         $dsn = sprintf(
             'smtp://%s:%s@%s:%d?encryption=%s&verify_peer=%d',
-            $transport->requireString('username'),
-            $transport->requireString('password'),
-            $transport->requireString('host'),
-            $transport->requireInt('port'),
-            $transport->getString('encryption') ?? '',
-            $transport->requireBool('verify_peer') ? 1 : 0,
+            $transport->getReader()->requireString('username'),
+            $transport->getReader()->requireString('password'),
+            $transport->getReader()->requireString('host'),
+            $transport->getReader()->requireInt('port'),
+            $transport->getReader()->getString('encryption') ?? '',
+            $transport->getReader()->requireBool('verify_peer') ? 1 : 0,
         );
 
         $options->set('transport.dsn', $dsn);
@@ -112,26 +112,26 @@ class SmtpStrategy extends AbstractMailerStrategy implements SenderStrategyInter
     {
         $transport = $options->requireContainer('transport');
 
-        $endpoint = $transport->getString('endpoint');
+        $endpoint = $transport->getReader()->getString('endpoint');
         if (!empty($endpoint)) {
             return $endpoint;
         }
 
         $endpoint = '';
 
-        $encryption = $transport->getString('encryption');
+        $encryption = $transport->getReader()->getString('encryption');
         if ($encryption !== null) {
             $endpoint .= $encryption . '://';
         }
 
-        $endpoint .= $transport->requireString('host');
+        $endpoint .= $transport->getReader()->requireString('host');
 
-        $port = $transport->getInt('port');
+        $port = $transport->getReader()->getInt('port');
         if ($port !== null) {
             $endpoint .= ':' . $port;
         }
 
-        if ($transport->getBool('verify_peer') === false) {
+        if ($transport->getReader()->getBool('verify_peer') === false) {
             $endpoint .= '/novalidate-cert';
         }
 
