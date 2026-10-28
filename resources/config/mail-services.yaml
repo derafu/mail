@@ -3,6 +3,13 @@
 #
 #   imports:
 #       - { resource: '../vendor/derafu/mail/resources/config/mail-services.yaml' }
+#
+# This package uses Backbone's PHP attributes for service discovery metadata.
+# The application must register ServiceProcessingCompilerPass before compiling
+# the container. It derives handler/strategy tags and names, service aliases and
+# lazy definitions from those attributes; importing this YAML alone does not
+# process them. Reuse the existing pass when the application already installs it.
+# See the Backbone service lifecycle documentation for bootstrap details.
 
 services:
 
